@@ -1,0 +1,5 @@
+fpdf2
+requests
+cairosvg
+beautifulsoup4
+lxml
