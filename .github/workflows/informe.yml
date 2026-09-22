@@ -18,8 +18,8 @@ jobs:
         run: pip install -r requirements.txt
       - name: Generar informe
         env:
-          FOOTBALL_DATA_TOKEN: ${{ secrets.FOOTBALL_DATA_TOKEN }}
-          #API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+          #FOOTBALL_DATA_TOKEN: ${{ secrets.FOOTBALL_DATA_TOKEN }}
+          API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
         run: python main2division.py
       - name: Guardar
         run: |
