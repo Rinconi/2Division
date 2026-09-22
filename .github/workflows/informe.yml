@@ -13,13 +13,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.11'
       - name: Instalar
         run: pip install -r requirements.txt
       - name: Generar informe
         env:
           FOOTBALL_DATA_TOKEN: ${{ secrets.FOOTBALL_DATA_TOKEN }}
-          API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+          #API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
         run: python main2division.py
       - name: Guardar
         run: |
