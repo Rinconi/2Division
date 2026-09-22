@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 import fpdf
 
 def get_es2():
-    for season in [2024, 2023]:
+    for season in [2025, 2024]:
         url = f"https://api.openligadb.de/getbltable/es2/{season}"
         print(f"Probando {url}")
         try:
