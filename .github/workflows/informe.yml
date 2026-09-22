@@ -25,6 +25,7 @@ jobs:
         run: |
           git config user.name "bot"
           git config user.email "bot@bot.com"
-          git add informes/ logos/
+          git add informes/ || true 
+          git add logos/ --ignore-errors || true
           git commit -m "Nuevo informe" || echo "sin cambios"
           git push
