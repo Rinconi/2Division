@@ -11,7 +11,7 @@ HEADERS = {"x-apisports-key": KEY}
 
 table = []
 for season in [2025, 2024, 2023]:
-    URL = f"https://v3.football.api-sports.io/standings?league=140&season={season}"
+    URL = f"https://v3.football.api-sports.io/standings?league=141&season={season}"
     print(f"Probando: {URL}")
     r = requests.get(URL, headers=HEADERS, timeout=20)
     print(f"Status: {r.status_code}")
