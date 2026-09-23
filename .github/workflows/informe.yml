@@ -15,7 +15,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Instalar
-        run: pip install -r requirements.txt
+        run: pip install reportlab pillow requests 
       - name: Generar informe
         env:
           #FOOTBALL_DATA_TOKEN: ${{ secrets.FOOTBALL_DATA_TOKEN }}
