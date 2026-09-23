@@ -1,24 +1,29 @@
-name: build
-on: [push]
+name: Informe Liga Hipermotion
+on:
+  schedule:
+    - cron: '0 8 * * 1'
+  workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       - name: Instalar
-        run: pip install reportlab pillow requests
+        run: pip install reportlab pillow requests 
       - name: Generar informe
-        run: |
-          python main2division.py
-          ls -lh
-          ls -lh logos/ || echo "no hay carpeta logos"
+        #env:
+          #FOOTBALL_DATA_TOKEN: ${{ secrets.FOOTBALL_DATA_TOKEN }}
+          #API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+        run: python main2division.py
       - name: Guardar
         uses: actions/upload-artifact@v4
         with:
-          name: Informe-Segunda
-          path: |
-            *.pdf
-            Segunda*.pdf
+          name: pdf-segunda
+          path: "*.pdf"
+        
