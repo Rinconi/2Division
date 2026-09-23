@@ -1,5 +1,8 @@
 name: Informe Liga Hipermotion
-on: [push]
+on:
+  push:
+  workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -9,16 +12,12 @@ jobs:
         with:
           python-version: '3.11'
       - name: Instalar
-        run: pip install reportlab pillow requests
+        run: pip install reportlab pillow
       - name: Generar informe
-        run: |
-          python main2division.py
-          ls -lh
-          ls -lh logos/ || echo "no hay carpeta logos"
-      - name: Guardar
+        run: python main2division.py
+      - name: Guardar PDF
         uses: actions/upload-artifact@v4
         with:
-          name: Informe-Segunda
-          path: |
-            *.pdf
-            Segunda*.pdf
+          name: Informe-Segunda-2Division
+          path: "*.pdf"
+          if-no-files-found: error
