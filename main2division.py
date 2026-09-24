@@ -14,25 +14,41 @@ TABLA = [
     ("cartagena", 23),
 ]
 
+def normaliza(s):
+    return s.lower().replace("-","").replace("_","").replace(" ","")
+
 logos_path = pathlib.Path("logos")
-logos_dict = {p.stem.lower(): p for p in logos_path.glob("*.png")}
+logos = {}
+for p in logos_path.glob("*.png"):
+    logos[normaliza(p.stem)] = p
+
+print(f"Logos encontrados en GitHub: {list(logos.keys())}")
 
 c = canvas.Canvas("Segunda_Division_24_25.pdf", pagesize=A4)
 w,h = A4
-c.setFont("Helvetica-Bold", 14)
+c.setFont("Helvetica-Bold", 16)
 c.drawCentredString(w/2, h-40, "LaLiga Hypermotion 24/25")
 y = h-80
+c.setFont("Helvetica", 11)
 
 for i,(eq,pts) in enumerate(TABLA,1):
-    p = logos_dict.get(eq.lower())
-    if p and p.exists():
+    eq_norm = normaliza(eq)
+    # busca coincidencia: si "oviedo" está dentro de "realoviedo" lo pilla
+    encontrado = None
+    for k,p in logos.items():
+        if eq_norm in k or k in eq_norm:
+            encontrado = p
+            break
+    if encontrado:
         try:
-            c.drawImage(ImageReader(str(p)), 35, y-3, 14, 14, mask='auto')
+            c.drawImage(ImageReader(str(encontrado)), 40, y-4, 18, 18, mask='auto')
         except Exception as e:
-            print(f"Error {eq}: {e}")
-    c.setFont("Helvetica", 10)
-    c.drawString(60, y, f"{i}. {eq} - {pts} pts")
-    y -= 20
+            print(f"Error dibujando {eq}: {e}")
+    else:
+        print(f"NO ENCONTRADO: {eq}")
+    
+    c.drawString(70, y, f"{i}. {eq} - {pts} pts")
+    y -= 24
 
 c.save()
-print(f"PDF creado con {len(logos_dict)} logos encontrados")
+print("PDF creado")
