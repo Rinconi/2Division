@@ -16,7 +16,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Instalar
-        run: pip install reportlab
+        run: pip install reportlab requests
       - name: Generar informe
         run: python main2division.py
       - name: Guardar PDF
