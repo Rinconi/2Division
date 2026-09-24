@@ -19,14 +19,14 @@ jobs:
         run: pip install reportlab requests
       - name: Generar informe
         run: python main2division.py
-      - name: Guardar PDF
+      - name: Guardar PDF y main actualizado
         #uses: actions/upload-artifact@v4
         #with:
         run: |
           git config user.name "bot"
           git config user.email "bot@bot.com"
-          git add informes/
-          git commit -m "Actualiza informe de Segunda" || echo "sin cambios"
+          git add informes/ main2division.py
+          git commit -m "Actualiza J + PDF de Segunda" || echo "sin cambios"
           git push
           
           
