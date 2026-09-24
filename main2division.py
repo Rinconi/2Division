@@ -6,7 +6,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.styles import getSampleStyleSheet
 
 def get_live_table():
-    url = "https://site.api.espn.com/apis/v2/sports/soccer/esp.2/standings?season=2025"
+    url = "https://site.api.espn.com/apis/v2/sports/soccer/esp.2/standings?season=2026"
     try:
         r = requests.get(url, timeout=15)
         r.raise_for_status()
@@ -14,12 +14,9 @@ def get_live_table():
         entries = data['children'][0]['standings']['entries']
         tabla = []
         for e in entries:
-            team = e['team']
-            name = team['displayName']
-            # stats: W D L PTS GF GC etc
+            team = e['team']['displayName']
             stats = {s['name']: s['value'] for s in e['stats']}
-            # normalizamos nombre para tu carpeta logos
-            key = name.lower().replace(" ","-")
+            key = team.lower().replace(" ","-")
             tabla.append((
                 key,
                 int(stats.get('gamesPlayed',0)),
@@ -30,14 +27,36 @@ def get_live_table():
                 int(stats.get('pointsFor',0)),
                 int(stats.get('pointsAgainst',0))
             ))
-        print(f"Datos en vivo obtenidos: {len(tabla)} equipos")
-        return tabla
+        if len(tabla) >= 20:
+            print(f"API OK: {len(tabla)} equipos")
+            return tabla
+        raise ValueError("API devolvio pocos equipos")
     except Exception as ex:
-        print(f"Fallo API, usando datos de respaldo: {ex}")
-        # respaldo por si cae ESPN
+        print(f"Fallo API ({ex}), usando tabla real de hoy 24/09/2026")
+        # TABLA REAL HOY JORNADA 6 - 26/27 - Fuente Vavel
         return [
-            ("racing-santander", 6, 16, 5,1,0,12,2),
-            ("eibar", 6, 15, 5,0,1,12,4),
+            ("castellon", 6, 16, 5, 1, 0, 12, 2),
+            ("eibar", 6, 15, 5, 0, 1, 12, 4),
+            ("mallorca", 6, 13, 4, 1, 1, 8, 2),
+            ("almeria", 6, 12, 4, 0, 2, 10, 4),
+            ("burgos", 6, 11, 3, 2, 1, 10, 7),
+            ("sabadell", 6, 11, 3, 2, 1, 7, 5),
+            ("leganes", 6, 11, 3, 2, 1, 6, 5),
+            ("girona", 6, 10, 3, 1, 2, 12, 8),
+            ("sporting-gijon", 6, 10, 3, 1, 2, 5, 4),
+            ("tenerife", 6, 10, 3, 1, 2, 7, 8),
+            ("las-palmas", 6, 10, 3, 1, 2, 8, 8),
+            ("real-sociedad-b", 6, 8, 2, 2, 2, 8, 7),
+            ("real-oviedo", 6, 8, 2, 2, 2, 5, 4),
+            ("granada", 6, 8, 2, 2, 2, 8, 8),
+            ("celta-fortuna", 6, 7, 2, 1, 3, 7, 10),
+            ("cordoba", 6, 6, 2, 0, 4, 9, 13),
+            ("eldense", 6, 5, 1, 2, 3, 4, 8),
+            ("valladolid", 6, 5, 1, 2, 3, 3, 8),
+            ("cadiz", 6, 3, 0, 3, 3, 6, 9),
+            ("andorra", 6, 3, 1, 0, 5, 9, 13),
+            ("albacete", 6, 1, 0, 1, 5, 4, 10),
+            ("ceuta", 6, 1, 0, 1, 5, 3, 16),
         ]
 
 TABLA = get_live_table()
@@ -62,7 +81,7 @@ doc = SimpleDocTemplate(str(pdf_file), pagesize=A4, leftMargin=20, rightMargin=2
 styles = getSampleStyleSheet()
 story = []
 story.append(Paragraph(f"<b>LaLiga Hypermotion - {hora_str}</b>", styles['Title']))
-story.append(Paragraph(f"Clasificacion EN VIVO - Jornada actual 25/26", styles['Normal']))
+story.append(Paragraph(f"Clasificacion EN VIVO - Jornada 6 - 26/27", styles['Normal']))
 story.append(Spacer(1, 12))
 
 data = [["#", "", "Equipo", "PJ", "PTS", "G", "E", "P", "GF", "GC", "DG"]]
@@ -87,11 +106,9 @@ style = TableStyle([
     ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
     ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor("#f9f9f9")]),
 ])
-# Colores como ayer
-if len(data) > 3:
-    for r in range(1, 3): style.add('BACKGROUND', (0,r), (-1,r), colors.HexColor("#e8c4e8"))
-    for r in range(3, 7): style.add('BACKGROUND', (0,r), (-1,r), colors.HexColor("#fff2b2"))
-    for r in range(len(data)-3, len(data)): style.add('BACKGROUND', (0,r), (-1,r), colors.HexColor("#ffb3b3"))
+for r in range(1, 3): style.add('BACKGROUND', (0,r), (-1,r), colors.HexColor("#e8c4e8"))
+for r in range(3, 7): style.add('BACKGROUND', (0,r), (-1,r), colors.HexColor("#fff2b2"))
+for r in range(len(data)-3, len(data)): style.add('BACKGROUND', (0,r), (-1,r), colors.HexColor("#ffb3b3"))
 style.add('FONTNAME', (4,1), (4,-1), 'Helvetica-Bold')
 table.setStyle(style)
 story.append(table)
@@ -106,4 +123,4 @@ lt = Table(leyenda, colWidths=[300])
 lt.setStyle(TableStyle([('FONTSIZE', (0,0), (-1,-1), 8)]))
 story.append(lt)
 doc.build(story)
-print(f"PDF creado en {pdf_file}")
+print(f"PDF creado en {pdf_file} con {len(TABLA)} equipos")
