@@ -168,7 +168,6 @@ for idx, (eq, pj, pts, g, e, p, gf, gc) in enumerate(TABLA, 1):
     lp = get_logo(eq)
 
     # Estilos grandes
-    from reportlab.lib.enums import TA_LEFT
     style_team_big = styles['Normal'].clone(f'team_big_{idx}')
     style_team_big.fontSize = 20
     style_team_big.fontName = 'Helvetica-Bold'
@@ -178,20 +177,37 @@ for idx, (eq, pj, pts, g, e, p, gf, gc) in enumerate(TABLA, 1):
     style_pj_big.fontSize = 12
     style_pj_big.fontName = 'Helvetica-Bold'
     style_pj_big.textColor = colors.HexColor("#333333")
-    style_pj_big.spaceAfter = 6
 
+    # TABLA DE CABECERA CON 2 FILAS - escudo ocupa 2 filas
     if lp and pathlib.Path(lp).exists():
-        hd = [[Image(lp, width=60, height=60), Paragraph(f"<b>{eq.replace('-',' ').title()} - Pos {idx} | {pts} pts</b>", style_team_big)]]
-        ht = Table(hd, colWidths=[70, 400])
+        logo_img = Image(lp, width=60, height=60)
+        header_data = [
+            [logo_img, Paragraph(f"<b>{eq.replace('-',' ').title()} - Pos {idx} | {pts} pts</b>", style_team_big)],
+            ["", Paragraph(f"PJ:{pj} &nbsp; G:{g} &nbsp; E:{e} &nbsp; P:{p} &nbsp; GF:{gf} &nbsp; GC:{gc} &nbsp; DG:{gf-gc}", style_pj_big)]
+        ]
+        ht = Table(header_data, colWidths=[70, 400])
+        ht.setStyle(TableStyle([
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('SPAN', (0,0), (0,1)), # escudo ocupa las 2 filas
+            ('ALIGN', (0,0), (0,1), 'CENTER'),
+            ('LEFTPADDING', (1,0), (1,1), 2), # aquí es donde la C marca el inicio
+            ('BOTTOMPADDING', (1,0), (1,0), 1),
+            ('TOPPADDING', (1,1), (1,1), 2),
+        ]))
     else:
-        hd = [[Paragraph(f"<b>{eq.replace('-',' ').title()} - Pos {idx} | {pts} pts</b>", style_team_big)]]
-        ht = Table(hd, colWidths=[470])
+        header_data = [
+            [Paragraph(f"<b>{eq.replace('-',' ').title()} - Pos {idx} | {pts} pts</b>", style_team_big)],
+            [Paragraph(f"PJ:{pj} &nbsp; G:{g} &nbsp; E:{e} &nbsp; P:{p} &nbsp; GF:{gf} &nbsp; GC:{gc} &nbsp; DG:{gf-gc}", style_pj_big)]
+        ]
+        ht = Table(header_data, colWidths=[470])
+        ht.setStyle(TableStyle([
+            ('LEFTPADDING', (0,0), (-1,-1), 72), # mismo arranque que con escudo
+        ]))
 
-    ht.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'MIDDLE')]))
     story.append(ht)
-    story.append(Spacer(1, 6))
-    story.append(Paragraph(f"PJ:{pj} &nbsp; G:{g} &nbsp; E:{e} &nbsp; P:{p} &nbsp; GF:{gf} &nbsp; GC:{gc} &nbsp; DG:{gf-gc}", style_pj_big))
     story.append(Spacer(1, 10))
+
+    
 
     # CAJITAS EN CASA / FUERA
     cajas_data = [[
