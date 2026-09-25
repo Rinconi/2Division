@@ -229,7 +229,7 @@ for idx, (eq, pj, pts, g, e, p, gf, gc) in enumerate(TABLA, 1):
     story.append(cajas)
     story.append(Spacer(1, 12))
 
-    story.append(Paragraph(f"<b>Partidos jugados (Jornada 1-6) - Casa / Resultado / Fuera</b>", styles['Normal'], style_sub))
+    story.append(Paragraph(f"<b>Partidos jugados (Jornada 1-6) - Casa / Resultado / Fuera</b>", center_style))
     story.append(Spacer(1, 6))
     pd = [["Fecha", "EN CASA", "R", "FUERA", "GOL"]]
     for f,c,r,fu,gol in PARTIDOS[eq]:
