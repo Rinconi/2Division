@@ -229,20 +229,19 @@ for idx, (eq, pj, pts, g, e, p, gf, gc) in enumerate(TABLA, 1):
     story.append(cajas)
     story.append(Spacer(1, 12))
 
-from reportlab.lib.enums import TA_CENTER
-    center_style = styles['Normal'].clone('centered_title')
+    center_style = styles['Normal'].clone(f'centered_title_{idx}')
     center_style.alignment = TA_CENTER
 
     story.append(
         Paragraph(
-            f"<b>Partidos jugados (Jornada 1-6) - Casa / Resultado / Fuera</b>",
-            styles['Normal']
+            "<b>Partidos jugados (Jornada 1-6) - Casa / Resultado / Fuera</b>",
+            center_style
         )
     )
-
+    story.append(Spacer(1, 6))
     
     #story.append(Paragraph(f"<b>Partidos jugados (Jornada 1-6) - Casa / Resultado / Fuera</b>", center_style))
-    story.append(Spacer(1, 6))
+    #story.append(Spacer(1, 6))
     pd = [["Fecha", "EN CASA", "R", "FUERA", "GOL"]]
     for f,c,r,fu,gol in PARTIDOS[eq]:
         pd.append([f,c,r,fu,gol])
