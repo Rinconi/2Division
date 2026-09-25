@@ -104,7 +104,7 @@ style = TableStyle([
     ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
     ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
     ('FONTSIZE', (0,0), (-1,0), 9),
-    ('FONTSIZE', (0,1), (-1,-1), 8),
+    ('FONTSIZE', (0,1), (-1,-1), 10),
     ('GRID', (0,0), (-1,-1), 0.3, colors.HexColor("#DEE2E6")),
     ('BOTTOMPADDING', (0,0), (-1,0), 8),
     ('TOPPADDING', (0,1), (-1,-1), 5),
