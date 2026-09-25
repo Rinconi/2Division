@@ -229,6 +229,9 @@ for idx, (eq, pj, pts, g, e, p, gf, gc) in enumerate(TABLA, 1):
     story.append(pt)
     story.append(PageBreak())
 
+doc.build(story)
+print("PDF 23 paginas OK")
+
 # --- AUTO-UPDATE DEL PROPIO main2division.py SI HAY JORNADA NUEVA ---
 import json, re
 
