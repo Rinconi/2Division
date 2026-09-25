@@ -92,12 +92,6 @@ for i, (eq, pj, pts, g, e, p, gf, gc) in enumerate(TABLA, 1):
     lp = get_logo(eq)
     img = Image(lp, width=14, height=14) if lp and pathlib.Path(lp).exists() else ""
     data.append([str(i), img, eq.replace("-"," ").title(), pj, pts, g, e, p, gf, gc, dg_str])
-#table = Table(data, colWidths=[22, 20, 125, 28, 32, 25, 25, 25, 32, 32, 32])
-#style = TableStyle([('BACKGROUND', (0,0), (-1,0), colors.black),('TEXTCOLOR', (0,0), (-1,0), colors.white),('ALIGN', (0,0), (-1,-1), 'CENTER'),('ALIGN', (2,1), (2,-1), 'LEFT'),('VALIGN', (0,0), (-1,-1), 'MIDDLE'),('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),('FONTSIZE', (0,0), (-1,0), 9),('FONTSIZE', (0,1), (-1,-1), 8),('GRID', (0,0), (-1,-1), 0.5, colors.grey)])
-#for r in range(1, 3): style.add('BACKGROUND', (0,r), (-1,r), colors.HexColor("#e8c4e8"))
-#for r in range(3, 7): style.add('BACKGROUND', (0,r), (-1,r), colors.HexColor("#fff2b2"))
-#for r in range(len(data)-3, len(data)): style.add('BACKGROUND', (0,r), (-1,r), colors.HexColor("#ffb3b3"))
-#table.setStyle(style)
 table = Table(data, colWidths=[22, 20, 125, 28, 32, 25, 25, 25, 32, 32, 32])
 style = TableStyle([
     ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#1B3B29")),
@@ -129,6 +123,20 @@ for r in range(1, len(data)):
 table.setStyle(style)
 
 story.append(table)
+story.append(Spacer(1, 8))
+
+# LEYENDA
+leyenda_data = [
+    [Paragraph('<font size=7><b><color color="#155724">■</color> Ascenso directo</b></font>', styles['Normal']),
+     Paragraph('<font size=7><b><color color="#856404">■</color> Playoff</b></font>', styles['Normal']),
+     Paragraph('<font size=7><b><color color="#721C24">■</color> Descenso</b></font>', styles['Normal'])]
+]
+leyenda_table = Table(leyenda_data, colWidths=[100, 80])
+leyenda_table.setStyle(TableStyle([
+    ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+    ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+]))
+story.append(leyenda_table)
 story.append(PageBreak())
 
 # PAG 2-23
