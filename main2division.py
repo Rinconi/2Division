@@ -126,21 +126,33 @@ for r in range(1, len(data)):
 table.setStyle(style)
 
 story.append(table)
-story.append(Spacer(1, 8))
+story.append(Spacer(1, 10))
 
 # LEYENDA
-leyenda_data = [
-    [Paragraph('<font size=7><b><color color="#155724">■</color> Ascenso directo</b></font>', styles['Normal']),
-     Paragraph('<font size=7><b><color color="#856404">■</color> Playoff</b></font>', styles['Normal']),
-     Paragraph('<font size=7><b><color color="#721C24">■</color> Descenso</b></font>', styles['Normal'])]
-]
-leyenda_table = Table(leyenda_data, colWidths=[100, 80])
-leyenda_table.setStyle(TableStyle([
-    ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+story.append(table)
+story.append(Spacer(1, 10))
+
+# LEYENDA con colores reales
+ley_data = [["", " Ascenso directo", "", " Playoff", "", " Descenso"]]
+ley = Table(ley_data, colWidths=[15, 90, 15, 60])
+
+ley.setStyle(TableStyle([
+    ('BACKGROUND', (0,0), (0,0), colors.HexColor("#D4EDDA")),
+    ('BACKGROUND', (2,0), (2,0), colors.HexColor("#FFF3CD")),
+    ('BACKGROUND', (4,0), (4,0), colors.HexColor("#F8D7DA")),
+    ('BOX', (0,0), (0,0), 0.5, colors.black),
+    ('BOX', (2,0), (2,0), 0.5, colors.black),
+    ('BOX', (4,0), (4,0), 0.5, colors.black),
+    ('FONTSIZE', (0,0), (-1,-1), 9),
+    ('FONTNAME', (1,0), (1,0), 'Helvetica-Bold'),
+    ('FONTNAME', (3,0), (3,0), 'Helvetica-Bold'),
+    ('FONTNAME', (5,0), (5,0), 'Helvetica-Bold'),
     ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+    ('ALIGN', (0,0), (-1,-1), 'LEFT'),
 ]))
-story.append(leyenda_table)
+story.append(ley)
 story.append(PageBreak())
+
 
 # PAG 2-23
 for idx, (eq, pj, pts, g, e, p, gf, gc) in enumerate(TABLA, 1):
