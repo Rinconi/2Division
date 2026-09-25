@@ -236,7 +236,7 @@ from reportlab.lib.enums import TA_CENTER
     story.append(
         Paragraph(
             f"<b>Partidos jugados (Jornada 1-6) - Casa / Resultado / Fuera</b>",
-            center_style
+            styles['Normal']
         )
     )
 
