@@ -81,9 +81,12 @@ story = []
 # PAG 1
 story.append(Paragraph(f"<b>LaLiga Hypermotion - {hora_str}</b>", styles['Title']))
 from reportlab.lib.enums import TA_CENTER
-style_center = styles["Normal"].clone('center')
-style_center.alignment = TA_CENTER
-story.append(Paragraph(f"Clasificacion EN VIVO - Jornada 6 - 26/27", style_center))
+style_sub = styles['Normal'].clone('subtitulo')
+style_sub.alignment = TA_CENTER
+style_sub.fontSize = 13
+style_sub.spaceAfter = 10
+style_sub.fontName = 'Helvetica-Bold'
+story.append(Paragraph(f"Clasificacion EN VIVO - Jornada 6 - 26/27", style_sub))
 story.append(Spacer(1, 12))
 data = [["#", "", "Equipo", "PJ", "PTS", "G", "E", "P", "GF", "GC", "DG"]]
 for i, (eq, pj, pts, g, e, p, gf, gc) in enumerate(TABLA, 1):
