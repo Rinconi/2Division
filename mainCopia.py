@@ -1,4 +1,5 @@
 import pathlib
+import requests
 from datetime import datetime
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
@@ -68,8 +69,9 @@ def get_logo(eq):
 
 out_dir = pathlib.Path("informes")
 out_dir.mkdir(exist_ok=True)
-fecha_str = datetime.now().strftime("%Y-%m-%d")
-hora_str = datetime.now().strftime("%d/%m/%Y %H:%M")
+from zoneinfo import ZoneInfo
+fecha_str = datetime.now(ZoneInfo("Europe/Madrid")).strftime("%Y-%m-%d")
+hora_str = datetime.now(ZoneInfo("Europe/Madrid")).strftime("%d/%m/%Y - %H:%M")
 pdf_file = out_dir / f"Informe_LaLiga_Hypermotion_{fecha_str}.pdf"
 
 doc = SimpleDocTemplate(str(pdf_file), pagesize=A4, leftMargin=20, rightMargin=20, topMargin=20, bottomMargin=20)
@@ -78,7 +80,13 @@ story = []
 
 # PAG 1
 story.append(Paragraph(f"<b>LaLiga Hypermotion - {hora_str}</b>", styles['Title']))
-story.append(Paragraph(f"Clasificacion EN VIVO - Jornada 6 - 26/27", styles['Normal']))
+from reportlab.lib.enums import TA_CENTER
+style_sub = styles['Normal'].clone('subtitulo')
+style_sub.alignment = TA_CENTER
+style_sub.fontSize = 13
+style_sub.spaceAfter = 10
+style_sub.fontName = 'Helvetica-Bold'
+story.append(Paragraph(f"Clasificacion EN VIVO - Jornada 6 - 26/27", style_sub))
 story.append(Spacer(1, 12))
 data = [["#", "", "Equipo", "PJ", "PTS", "G", "E", "P", "GF", "GC", "DG"]]
 for i, (eq, pj, pts, g, e, p, gf, gc) in enumerate(TABLA, 1):
@@ -88,13 +96,59 @@ for i, (eq, pj, pts, g, e, p, gf, gc) in enumerate(TABLA, 1):
     img = Image(lp, width=14, height=14) if lp and pathlib.Path(lp).exists() else ""
     data.append([str(i), img, eq.replace("-"," ").title(), pj, pts, g, e, p, gf, gc, dg_str])
 table = Table(data, colWidths=[22, 20, 125, 28, 32, 25, 25, 25, 32, 32, 32])
-style = TableStyle([('BACKGROUND', (0,0), (-1,0), colors.black),('TEXTCOLOR', (0,0), (-1,0), colors.white),('ALIGN', (0,0), (-1,-1), 'CENTER'),('ALIGN', (2,1), (2,-1), 'LEFT'),('VALIGN', (0,0), (-1,-1), 'MIDDLE'),('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),('FONTSIZE', (0,0), (-1,0), 9),('FONTSIZE', (0,1), (-1,-1), 8),('GRID', (0,0), (-1,-1), 0.5, colors.grey)])
-for r in range(1, 3): style.add('BACKGROUND', (0,r), (-1,r), colors.HexColor("#e8c4e8"))
-for r in range(3, 7): style.add('BACKGROUND', (0,r), (-1,r), colors.HexColor("#fff2b2"))
-for r in range(len(data)-3, len(data)): style.add('BACKGROUND', (0,r), (-1,r), colors.HexColor("#ffb3b3"))
+style = TableStyle([
+    ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#1B3B29")),
+    ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+    ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+    ('ALIGN', (2,1), (2,-1), 'LEFT'),
+    ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+    ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+    ('FONTSIZE', (0,0), (-1,0), 9),
+    ('FONTSIZE', (0,1), (-1,-1), 10),
+    ('GRID', (0,0), (-1,-1), 0.3, colors.HexColor("#DEE2E6")),
+    ('BOTTOMPADDING', (0,0), (-1,0), 8),
+    ('TOPPADDING', (0,1), (-1,-1), 5),
+    ('BOTTOMPADDING', (0,1), (-1,-1), 5),
+])
+# Colores por puesto
+for r in range(1, len(data)):
+    pos = r
+    if pos <= 2:
+        bg = colors.HexColor("#D4EDDA") # ascenso directo
+    elif pos <= 6:
+        bg = colors.HexColor("#FFF3CD") # playoff
+    elif pos >= 19:
+        bg = colors.HexColor("#F8D7DA") # descenso
+    else:
+        bg = colors.HexColor("#FFFFFF") if r % 2 == 0 else colors.HexColor("#F8F9FA")
+    style.add('BACKGROUND', (0,r), (-1,r), bg)
+
 table.setStyle(style)
+
 story.append(table)
+story.append(Spacer(1, 10))
+
+# LEYENDA con colores reales
+ley_data = [["", " Ascenso directo", "", " Playoff", "", " Descenso"]]
+ley = Table(ley_data, colWidths=[15, 90, 15, 60])
+
+ley.setStyle(TableStyle([
+    ('BACKGROUND', (0,0), (0,0), colors.HexColor("#D4EDDA")),
+    ('BACKGROUND', (2,0), (2,0), colors.HexColor("#FFF3CD")),
+    ('BACKGROUND', (4,0), (4,0), colors.HexColor("#F8D7DA")),
+    ('BOX', (0,0), (0,0), 0.5, colors.black),
+    ('BOX', (2,0), (2,0), 0.5, colors.black),
+    ('BOX', (4,0), (4,0), 0.5, colors.black),
+    ('FONTSIZE', (0,0), (-1,-1), 9),
+    ('FONTNAME', (1,0), (1,0), 'Helvetica-Bold'),
+    ('FONTNAME', (3,0), (3,0), 'Helvetica-Bold'),
+    ('FONTNAME', (5,0), (5,0), 'Helvetica-Bold'),
+    ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+    ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+]))
+story.append(ley)
 story.append(PageBreak())
+
 
 # PAG 2-23
 for idx, (eq, pj, pts, g, e, p, gf, gc) in enumerate(TABLA, 1):
