@@ -150,23 +150,103 @@ story.append(ley)
 story.append(PageBreak())
 
 
-# PAG 2-23
+# PAG 2-23 - NUEVA VERSIÓN GRANDE + CAJITAS
 for idx, (eq, pj, pts, g, e, p, gf, gc) in enumerate(TABLA, 1):
+    # ---- Calcular EN CASA / FUERA ----
+    casa_v = casa_e = casa_d = 0
+    fuera_v = fuera_e = fuera_d = 0
+    for f,c,r,fu,gol in PARTIDOS[eq]:
+        if c!= "": # juega en casa
+            if r == 'V': casa_v += 1
+            elif r == 'E': casa_e += 1
+            elif r == 'D': casa_d += 1
+        else: # juega fuera
+            if r == 'V': fuera_v += 1
+            elif r == 'E': fuera_e += 1
+            elif r == 'D': fuera_d += 1
+
     lp = get_logo(eq)
+
+    # Estilos grandes
+    style_team_big = styles['Normal'].clone(f'team_big_{idx}')
+    style_team_big.fontSize = 20
+    style_team_big.fontName = 'Helvetica-Bold'
+    style_team_big.leading = 22
+
+    style_pj_big = styles['Normal'].clone(f'pj_big_{idx}')
+    style_pj_big.fontSize = 12
+    style_pj_big.fontName = 'Helvetica-Bold'
+    style_pj_big.textColor = colors.HexColor("#333333")
+
+    # TABLA DE CABECERA CON 2 FILAS - escudo ocupa 2 filas
     if lp and pathlib.Path(lp).exists():
-        hd = [[Image(lp, width=40, height=40), Paragraph(f"<b>{eq.replace('-',' ').title()} - Pos {idx} | {pts} pts</b><br/><font size=9>PJ:{pj} G:{g} E:{e} P:{p} GF:{gf} GC:{gc}</font>", styles['Normal'])]]
+        logo_img = Image(lp, width=60, height=60)
+        header_data = [
+            [logo_img, Paragraph(f"<b>{eq.replace('-',' ').title()} - Pos {idx} | {pts} pts</b>", style_team_big)],
+            ["", Paragraph(f"PJ:{pj} &nbsp; G:{g} &nbsp; E:{e} &nbsp; P:{p} &nbsp; GF:{gf} &nbsp; GC:{gc} &nbsp; DG:{gf-gc}", style_pj_big)]
+        ]
+        ht = Table(header_data, colWidths=[70, 400])
+        ht.setStyle(TableStyle([
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('SPAN', (0,0), (0,1)), # escudo ocupa las 2 filas
+            ('ALIGN', (0,0), (0,1), 'CENTER'),
+            ('LEFTPADDING', (1,0), (1,1), 2), # aquí es donde la C marca el inicio
+            ('BOTTOMPADDING', (1,0), (1,0), 1),
+            ('TOPPADDING', (1,1), (1,1), 2),
+        ]))
     else:
-        hd = [[Paragraph(f"<b>{eq.replace('-',' ').title()} - Pos {idx} | {pts} pts</b>", styles['Normal'])]]
-    ht = Table(hd, colWidths=[50, 400])
+        header_data = [
+            [Paragraph(f"<b>{eq.replace('-',' ').title()} - Pos {idx} | {pts} pts</b>", style_team_big)],
+            [Paragraph(f"PJ:{pj} &nbsp; G:{g} &nbsp; E:{e} &nbsp; P:{p} &nbsp; GF:{gf} &nbsp; GC:{gc} &nbsp; DG:{gf-gc}", style_pj_big)]
+        ]
+        ht = Table(header_data, colWidths=[470])
+        ht.setStyle(TableStyle([
+            ('LEFTPADDING', (0,0), (-1,-1), 72), # mismo arranque que con escudo
+        ]))
+
     story.append(ht)
+    story.append(Spacer(1, 10))
+
+    
+
+    # CAJITAS EN CASA / FUERA
+    cajas_data = [[
+        Paragraph(f"<b>EN CASA:</b> {casa_v}V - {casa_e}E - {casa_d}D", styles['Normal']),
+        Paragraph(f"<b>FUERA:</b> {fuera_v}V - {fuera_e}E - {fuera_d}D", styles['Normal'])
+    ]]
+    cajas = Table(cajas_data, colWidths=[150, 150])
+    cajas.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (0,0), colors.HexColor("#E8F5E9")),
+        ('BACKGROUND', (1,0), (1,0), colors.HexColor("#FFEBEE")),
+        ('BOX', (0,0), (0,0), 1, colors.HexColor("#2E7D32")),
+        ('BOX', (1,0), (1,0), 1, colors.HexColor("#C62828")),
+        ('FONTSIZE', (0,0), (-1,-1), 11),
+        ('FONTNAME', (0,0), (-1,-1), 'Helvetica-Bold'),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('TOPPADDING', (0,0), (-1,-1), 8),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+    ]))
+    story.append(cajas)
     story.append(Spacer(1, 12))
-    story.append(Paragraph(f"<b>Partidos jugados (Jornada 1-6) - Casa / Resultado / Fuera</b>", styles['Normal']))
+
+    center_style = styles['Normal'].clone(f'centered_title_{idx}')
+    center_style.alignment = TA_CENTER
+
+    story.append(
+        Paragraph(
+            "<b>Partidos jugados (Jornada 1-6) - Casa / Resultado / Fuera</b>",
+            center_style
+        )
+    )
     story.append(Spacer(1, 6))
+    
+    #story.append(Paragraph(f"<b>Partidos jugados (Jornada 1-6) - Casa / Resultado / Fuera</b>", center_style))
+    #story.append(Spacer(1, 6))
     pd = [["Fecha", "EN CASA", "R", "FUERA", "GOL"]]
     for f,c,r,fu,gol in PARTIDOS[eq]:
         pd.append([f,c,r,fu,gol])
     pt = Table(pd, colWidths=[70, 170, 25, 170, 40])
-    ps = TableStyle([('BACKGROUND', (0,0), (-1,0), colors.black),('TEXTCOLOR', (0,0), (-1,0), colors.white),('ALIGN', (0,0), (-1,-1), 'CENTER'),('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),('FONTSIZE', (0,0), (-1,-1), 8),('GRID', (0,0), (-1,-1), 0.4, colors.grey)])
+    ps = TableStyle([('BACKGROUND', (0,0), (-1,0), colors.black),('TEXTCOLOR', (0,0), (-1,0), colors.white),('ALIGN', (0,0), (-1,-1), 'CENTER'),('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),('FONTSIZE', (0,0), (-1,-1), 9),('GRID', (0,0), (-1,-1), 0.4, colors.grey)])
     for ri in range(1, len(pd)):
         res = pd[ri][2]
         if res=='V': ps.add('BACKGROUND', (2,ri), (2,ri), colors.HexColor("#b6f5b6"))
