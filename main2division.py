@@ -69,8 +69,9 @@ def get_logo(eq):
 
 out_dir = pathlib.Path("informes")
 out_dir.mkdir(exist_ok=True)
-fecha_str = datetime.now().strftime("%Y-%m-%d")
-hora_str = datetime.now().strftime("%d/%m/%Y %H:%M")
+from zoneinfo import ZoneInfo
+fecha_str = datetime.now(ZoneInfo("Europe/Madrid")).strftime("%Y-%m-%d")
+hora_str = datetime.now(ZoneInfo("Europe/Madrid")).strftime("%d/%m/%Y - %H:%M")
 pdf_file = out_dir / f"Informe_LaLiga_Hypermotion_{fecha_str}.pdf"
 
 doc = SimpleDocTemplate(str(pdf_file), pagesize=A4, leftMargin=20, rightMargin=20, topMargin=20, bottomMargin=20)
