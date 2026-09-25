@@ -128,10 +128,6 @@ table.setStyle(style)
 story.append(table)
 story.append(Spacer(1, 10))
 
-# LEYENDA
-story.append(table)
-story.append(Spacer(1, 10))
-
 # LEYENDA con colores reales
 ley_data = [["", " Ascenso directo", "", " Playoff", "", " Descenso"]]
 ley = Table(ley_data, colWidths=[15, 90, 15, 60])
