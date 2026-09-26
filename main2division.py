@@ -168,7 +168,18 @@ for idx,(eq,pj,pts,g,e,p,gf,gc) in enumerate(TABLA,1):
     story.append(Paragraph(f"<b>Partidos J1-{J}</b>",center_style)); story.append(Spacer(1,6))
     pd=[["Fecha","EN CASA","R","FUERA","GOL"]]
     for row in PARTIDOS[eq]: pd.append(list(row))
-    pt=Table(pd,colWidths=[70,170,25,170,40]); pt.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,0),colors.black),('TEXTCOLOR',(0,0),(-1,0),colors.white),('GRID',(0,0),(-1,-1),0.3,colors.grey),('FONTSIZE',(0,0),(-1,-1),8)]))
-    story.append(pt); story.append(PageBreak())
+
+    pt = Table(pd, colWidths=[70, 170, 25, 170, 40])
+    ps = TableStyle([('BACKGROUND', (0,0), (-1,0), colors.black),('TEXTCOLOR', (0,0), (-1,0), colors.white),('ALIGN', (0,0), (-1,-1), 'CENTER'),('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),('FONTSIZE', (0,0), (-1,-1), 9),('GRID', (0,0), (-1,-1), 0.4, colors.grey)])
+    for ri in range(1, len(pd)):
+        res = pd[ri][2]
+        if res=='V': ps.add('BACKGROUND', (2,ri), (2,ri), colors.HexColor("#b6f5b6"))
+        elif res=='D': ps.add('BACKGROUND', (2,ri), (2,ri), colors.HexColor("#ffb3b3"))
+        elif res=='E': ps.add('BACKGROUND', (2,ri), (2,ri), colors.HexColor("#fff2b2"))
+    pt.setStyle(ps)
+    story.append(pt)
+    story.append(PageBreak())
+    
+    
 doc.build(story)
 print(f"PDF J{J} OK")
