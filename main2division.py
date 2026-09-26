@@ -119,3 +119,4 @@ nuevos = fetch_laliga_oficial_desde(ultima_fecha)
 if len(PARTIDOS.get("girona",[]))==6:
     PARTIDOS["girona"].append(("2026-09-25","Girona 2-0 Albacete","V","","2-0"))
     PARTIDOS["albacete"].append(("2026-09-25","","D","Girona 2-0 Albaceta", "2-0"))
+    nuevos+=1
