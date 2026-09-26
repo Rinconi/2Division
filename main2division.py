@@ -1,36 +1,13 @@
 import pathlib
-import requests
 from datetime import datetime
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image, PageBreak
 from reportlab.lib.styles import getSampleStyleSheet
+from zoneinfo import ZoneInfo
+from reportlab.lib.enums import TA_CENTER
 
-TABLA = [
-    ("castellon", 6, 16, 5, 1, 0, 12, 2),
-    ("eibar", 6, 15, 5, 0, 1, 12, 4),
-    ("mallorca", 6, 13, 4, 1, 1, 8, 2),
-    ("almeria", 6, 12, 4, 0, 2, 10, 4),
-    ("burgos", 6, 11, 3, 2, 1, 10, 7),
-    ("sabadell", 6, 11, 3, 2, 1, 7, 5),
-    ("leganes", 6, 11, 3, 2, 1, 6, 5),
-    ("girona", 6, 10, 3, 1, 2, 12, 8),
-    ("sporting-gijon", 6, 10, 3, 1, 2, 5, 4),
-    ("tenerife", 6, 10, 3, 1, 2, 7, 8),
-    ("las-palmas", 6, 10, 3, 1, 2, 8, 8),
-    ("real-sociedad-b", 6, 8, 2, 2, 2, 8, 7),
-    ("real-oviedo", 6, 8, 2, 2, 2, 5, 4),
-    ("granada", 6, 8, 2, 2, 2, 8, 8),
-    ("celta-fortuna", 6, 7, 2, 1, 3, 7, 10),
-    ("cordoba", 6, 6, 2, 0, 4, 9, 13),
-    ("eldense", 6, 5, 1, 2, 3, 4, 8),
-    ("valladolid", 6, 5, 1, 2, 3, 3, 8),
-    ("cadiz", 6, 3, 0, 3, 3, 6, 9),
-    ("andorra", 6, 3, 1, 0, 5, 9, 13),
-    ("albacete", 6, 1, 0, 1, 5, 4, 10),
-    ("ceuta", 6, 1, 0, 1, 5, 3, 16),
-]
-
+# --- DATOS J1-J6 (TU BASE BUENA) ---
 PARTIDOS = {
     "castellon": [("2026-08-14","","V","Real Sociedad B 0-1 Castellón","0-1"),("2026-08-23","Castellón 0-0 Sabadell","E","","0-0"),("2026-08-31","", "V","Celta Fortuna 1-2 Castellón","1-2"),("2026-09-06","Castellón 2-0 Albacete","V","","2-0"),("2026-09-12","","V","Girona 1-2 Castellón","1-2"),("2026-09-19","Castellón 5-0 Tenerife","V","","5-0")],
     "eibar": [("2026-08-16","Eibar 1-3 Tenerife","D","","1-3"),("2026-08-23","Eibar 1-0 Valladolid","V","","1-0"),("2026-08-30","","V","Andorra 0-1 Eibar","0-1"),("2026-09-06","Eibar 3-0 Granada","V","","3-0"),("2026-09-14","","V","Celta Fortuna 0-4 Eibar","0-4"),("2026-09-19","","V","Eldense 1-2 Eibar","1-2")],
@@ -55,6 +32,34 @@ PARTIDOS = {
     "albacete": [("2026-08-16","","D","Las Palmas 2-1 Albacete","2-1"),("2026-08-22","Albacete 1-2 Real Sociedad B","D","","1-2"),("2026-08-30","Albacete 0-1 Real Oviedo","D","","0-1"),("2026-09-06","","D","Castellón 2-0 Albacete","2-0"),("2026-09-12","","E","Granada 1-1 Albacete","1-1"),("2026-09-18","Albacete 1-2 Córdoba","D","","1-2")],
     "ceuta": [("2026-08-15","","D","Andorra 5-1 Ceuta","5-1"),("2026-08-22","Ceuta 0-2 Las Palmas","D","","0-2"),("2026-08-30","","D","Mallorca 3-0 Ceuta","3-0"),("2026-09-05","Ceuta 0-2 Celta Fortuna","D","","0-2"),("2026-09-11","","D","Burgos 3-1 Ceuta","3-1"),("2026-09-20","Ceuta 1-1 Valladolid","E","","1-1")],
 }
+
+# --- PARCHE J7: Girona 2-0 Albacete (25/09) ---
+if len(PARTIDOS["girona"]) == 6:
+    PARTIDOS["girona"].append(("2026-09-25","Girona 2-0 Albacete","V","","2-0"))
+    PARTIDOS["albacete"].append(("2026-09-25","","D","Girona 2-0 Albacete","2-0"))
+
+# --- CALCULO AUTOMATICO DE LA TABLA ---
+def recalcular_tabla(d):
+    t=[]
+    for eq,lista in d.items():
+        pj=len(lista)
+        g=sum(1 for _,_,r,_,_ in lista if r=='V')
+        e=sum(1 for _,_,r,_,_ in lista if r=='E')
+        pe=sum(1 for _,_,r,_,_ in lista if r=='D')
+        gf=gc=0
+        for _,c,_,_,gol in lista:
+            if "-" not in gol: continue
+            try:
+                a,b=map(int,gol.split("-"))
+                if c!="": gf+=a; gc+=b
+                else: gf+=b; gc+=a
+            except: pass
+        t.append((eq,pj,g*3+e,g,e,pe,gf,gc))
+    t.sort(key=lambda x:(x[2],(x[6]-x[7]),x[6]),reverse=True)
+    return t
+
+TABLA = recalcular_tabla(PARTIDOS)
+
 def normaliza(s): return s.lower().replace("-","").replace("_","").replace(" ","")
 logos_path = pathlib.Path("logos")
 logos = {normaliza(p.stem): p for p in logos_path.glob("*.png")}
@@ -67,7 +72,6 @@ def get_logo(eq):
 
 out_dir = pathlib.Path("informes")
 out_dir.mkdir(exist_ok=True)
-from zoneinfo import ZoneInfo
 fecha_str = datetime.now(ZoneInfo("Europe/Madrid")).strftime("%Y-%m-%d")
 hora_str = datetime.now(ZoneInfo("Europe/Madrid")).strftime("%d/%m/%Y - %H:%M")
 pdf_file = out_dir / f"Informe_LaLiga_Hypermotion_{fecha_str}.pdf"
@@ -77,13 +81,13 @@ styles = getSampleStyleSheet()
 story = []
 
 story.append(Paragraph(f"<b>LaLiga Hypermotion - {hora_str}</b>", styles['Title']))
-from reportlab.lib.enums import TA_CENTER
 style_sub = styles['Normal'].clone('subtitulo')
 style_sub.alignment = TA_CENTER
 style_sub.fontSize = 13
 style_sub.spaceAfter = 10
 style_sub.fontName = 'Helvetica-Bold'
-story.append(Paragraph(f"Clasificacion EN VIVO - Jornada 7 - 26/27", style_sub))
+JORNADA = max(len(v) for v in PARTIDOS.values())
+story.append(Paragraph(f"Clasificacion EN VIVO - Jornada {JORNADA} - 26/27", style_sub))
 story.append(Spacer(1, 12))
 data = [["#", "", "Equipo", "PJ", "PTS", "G", "E", "P", "GF", "GC", "DG"]]
 for i, (eq, pj, pts, g, e, p, gf, gc) in enumerate(TABLA, 1):
@@ -109,14 +113,18 @@ style = TableStyle([
 ])
 for r in range(1, len(data)):
     pos = r
-    bg = colors.HexColor("#D4EDDA") if pos <= 2 else colors.HexColor("#FFF3CD") if pos <= 6 else colors.HexColor("#F8D7DA") if pos >= 19 else colors.HexColor("#FFFFFF") if r % 2 == 0 else colors.HexColor("#F8F9FA")
+    if pos <= 2: bg = colors.HexColor("#D4EDDA")
+    elif pos <= 6: bg = colors.HexColor("#FFF3CD")
+    elif pos >= 19: bg = colors.HexColor("#F8D7DA")
+    else: bg = colors.HexColor("#FFFFFF") if r % 2 == 0 else colors.HexColor("#F8F9FA")
     style.add('BACKGROUND', (0,r), (-1,r), bg)
 table.setStyle(style)
 story.append(table)
 story.append(PageBreak())
 
 for idx, (eq, pj, pts, g, e, p, gf, gc) in enumerate(TABLA, 1):
-    casa_v = casa_e = casa_d = fuera_v = fuera_e = fuera_d = 0
+    casa_v = casa_e = casa_d = 0
+    fuera_v = fuera_e = fuera_d = 0
     for f,c,r,fu,gol in PARTIDOS[eq]:
         if c!= "":
             if r == 'V': casa_v += 1
@@ -142,41 +150,21 @@ for idx, (eq, pj, pts, g, e, p, gf, gc) in enumerate(TABLA, 1):
             ["", Paragraph(f"PJ:{pj} &nbsp; G:{g} &nbsp; E:{e} &nbsp; P:{p} &nbsp; GF:{gf} &nbsp; GC:{gc} &nbsp; DG:{gf-gc}", style_pj_big)]
         ]
         ht = Table(header_data, colWidths=[70, 400])
-        ht.setStyle(TableStyle([
-            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('SPAN', (0,0), (0,1)),
-            ('ALIGN', (0,0), (0,1), 'CENTER'),
-            ('LEFTPADDING', (1,0), (1,1), 2),
-            ('BOTTOMPADDING', (1,0), (1,0), 1),
-            ('TOPPADDING', (1,1), (1,1), 2),
-        ]))
+        ht.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'MIDDLE'),('SPAN', (0,0), (0,1)),('ALIGN', (0,0), (0,1), 'CENTER'),('LEFTPADDING', (1,0), (1,1), 2),('BOTTOMPADDING', (1,0), (1,0), 1),('TOPPADDING', (1,1), (1,1), 2),]))
     else:
-        header_data = [
-            [Paragraph(f"<b>{eq.replace('-',' ').title()} - Pos {idx} | {pts} pts</b>", style_team_big)],
-            [Paragraph(f"PJ:{pj} &nbsp; G:{g} &nbsp; E:{e} &nbsp; P:{p} &nbsp; GF:{gf} &nbsp; GC:{gc} &nbsp; DG:{gf-gc}", style_pj_big)]
-        ]
+        header_data = [[Paragraph(f"<b>{eq.replace('-',' ').title()} - Pos {idx} | {pts} pts</b>", style_team_big)],[Paragraph(f"PJ:{pj} &nbsp; G:{g} &nbsp; E:{e} &nbsp; P:{p} &nbsp; GF:{gf} &nbsp; GC:{gc} &nbsp; DG:{gf-gc}", style_pj_big)]]
         ht = Table(header_data, colWidths=[470])
-        ht.setStyle(TableStyle([('LEFTPADDING', (0,0), (-1,-1), 72)]))
+        ht.setStyle(TableStyle([('LEFTPADDING', (0,0), (-1,-1), 72),]))
     story.append(ht)
     story.append(Spacer(1, 10))
     cajas_data = [[Paragraph(f"<b>EN CASA:</b> {casa_v}V - {casa_e}E - {casa_d}D", styles['Normal']), Paragraph(f"<b>FUERA:</b> {fuera_v}V - {fuera_e}E - {fuera_d}D", styles['Normal'])]]
     cajas = Table(cajas_data, colWidths=[150, 150])
-    cajas.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (0,0), colors.HexColor("#E8F5E9")),
-        ('BACKGROUND', (1,0), (1,0), colors.HexColor("#FFEBEE")),
-        ('BOX', (0,0), (0,0), 1, colors.HexColor("#2E7D32")),
-        ('BOX', (1,0), (1,0), 1, colors.HexColor("#C62828")),
-        ('FONTSIZE', (0,0), (-1,-1), 11),
-        ('FONTNAME', (0,0), (-1,-1), 'Helvetica-Bold'),
-        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-        ('TOPPADDING', (0,0), (-1,-1), 8),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
-    ]))
+    cajas.setStyle(TableStyle([('BACKGROUND', (0,0), (0,0), colors.HexColor("#E8F5E9")),('BACKGROUND', (1,0), (1,0), colors.HexColor("#FFEBEE")),('BOX', (0,0), (0,0), 1, colors.HexColor("#2E7D32")),('BOX', (1,0), (1,0), 1, colors.HexColor("#C62828")),('FONTSIZE', (0,0), (-1,-1), 11),('FONTNAME', (0,0), (-1,-1), 'Helvetica-Bold'),('ALIGN', (0,0), (-1,-1), 'CENTER'),('TOPPADDING', (0,0), (-1,-1), 8),('BOTTOMPADDING', (0,0), (-1,-1), 8),]))
     story.append(cajas)
     story.append(Spacer(1, 12))
     center_style = styles['Normal'].clone(f'centered_title_{idx}')
     center_style.alignment = TA_CENTER
-    story.append(Paragraph("<b>Partidos jugados (Jornada 1-7) - Casa / Resultado / Fuera</b>", center_style))
+    story.append(Paragraph(f"<b>Partidos jugados (Jornada 1-{JORNADA}) - Casa / Resultado / Fuera</b>", center_style))
     story.append(Spacer(1, 6))
     pd = [["Fecha", "EN CASA", "R", "FUERA", "GOL"]]
     for f,c,r,fu,gol in PARTIDOS[eq]:
@@ -193,33 +181,4 @@ for idx, (eq, pj, pts, g, e, p, gf, gc) in enumerate(TABLA, 1):
     story.append(PageBreak())
 
 doc.build(story)
-print("PDF 23 paginas OK")
-
-# --- PARCHE J7 Y GUARDADO ROBUSTO ---
-import json
-historial_file = pathlib.Path("informes") / "historial_hypermotion.json"
-
-def to_json_format(d):
-    out = {}
-    for k,v in d.items():
-        out[k] = [list(x) for x in v]
-    return out
-
-if historial_file.exists():
-    try:
-        old = json.loads(historial_file.read_text(encoding='utf-8'))
-        for eq in PARTIDOS:
-            if len(old.get(eq,[])) > len(PARTIDOS[eq]):
-                PARTIDOS[eq] = [tuple(x) for x in old[eq]]
-    except:
-        pass
-
-if len(PARTIDOS.get("girona",[])) == 6:
-    PARTIDOS["girona"].append(("2026-09-25","Girona 2-0 Albacete","V","","2-0"))
-    PARTIDOS["albacete"].append(("2026-09-25","","D","Girona 2-0 Albacete","2-0"))
-
-historial_file.parent.mkdir(exist_ok=True)
-with open(historial_file, "w", encoding="utf-8") as f:
-    json.dump(to_json_format(PARTIDOS), f, ensure_ascii=False, indent=2)
-
-print(f"PDF OK J{max(len(v) for v in PARTIDOS.values())}")
+print(f"PDF J{JORNADA} OK - {TABLA[0][0]} lider con {TABLA[0][2]} pts")
