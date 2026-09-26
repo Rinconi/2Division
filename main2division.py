@@ -48,7 +48,8 @@ def normaliza(s):
     for a,b in [("á","a"),("é","e"),("í","i"),("ó","o"),("ú","u"),("ñ","n")]: s=s.replace(a,b)
     return re.sub(r'[^a-z0-9]','',s)
 
-MAPEO={"castellon":"castellon","eibar":"eibar","mallorca":"mallorca","almeria":"almeria","burgos":"burgos","sabadell":"sabadell","leganes":"leganes","girona":"girona","sporting":"sporting-gijon","sportinggijon":"sporting-gijon","tenerife":"tenerife","laspalmas":"las-palmas","realsociedadb":"real-sociedad-b","oviedo":"real-oviedo","realoviedo":"real-oviedo","granada":"granada","celtafortuna":"celta-fortuna","cordoba":"cordoba","eldense":"eldense","valladolid":"valladolid","cadiz":"cadiz","andorra":"andorra","albacete":"albacete","ceuta":"ceuta"}
+MAPEO={"castellon":"castellon","eibar":"eibar","mallorca":"mallorca","almeria":"almeria","burgos":"burgos","sabadell":"sabadell","leganes":"leganes","girona":"girona","sporting":"sporting-gijon","sportinggijon":"sporting-gijon","tenerife":"tenerife","laspalmas":"las-palmas","realsociedadb":"real-sociedad-b","oviedo":"real-oviedo","realoviedo":"real-oviedo","granada":"granada","celtafortuna":"celta-fortuna","cordoba":"cordoba","eldense":"eldense","valladolid":"valladolid","cadiz":"cadiz","andorra":"andorra","albacete":"albacete","ceuta":"ceuta"
+}
 
 def cargar_historial():
     if historial_file.exists():
