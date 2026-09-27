@@ -56,47 +56,95 @@ if historial_file.exists():
 
 def fetch_toda_jornada():
     nuevos = 0
-    try:
-        import requests
-        from bs4 import BeautifulSoup
-        from datetime import datetime
-        print("Consultando LaLiga oficial J7 (fuente que no bloquea GitHub)...")
-        headers = {"User-Agent": "Mozilla/5.0"}
-        # Esta página sí responde 200 desde Actions
-        url = "https://www.resultados-futbol.com/laliga2/grupo1/jornada7"
-        r = requests.get(url, headers=headers, timeout=20)
-        print(f"resultados-futbol -> {r.status_code} len {len(r.text)}")
-        soup = BeautifulSoup(r.text, "lxml")
-        # cada partido viene como: Girona 2-0 Albacete
-        for row in soup.select("tr.vevent, tr.b1, tr.b2"):
-            try:
-                local = row.select_one("td.equipo1").get_text(strip=True)
-                visita = row.select_one("td.equipo2").get_text(strip=True)
-                res = row.select_one("td.rstd").get_text(strip=True) # 2-0
-                if "-" not in res: continue
-                gol = res.replace(" ","")
-                fecha_real = "2026-09-27" # la jornada actual
-                clave_home = clave_equipo(local)
-                clave_away = clave_equipo(visita)
-                if not clave_home or not clave_away: continue
-                ya = any(gol==x[4] and local in x[1] for x in PARTIDOS.get(clave_home,[]))
-                if ya: continue
-                hs,aws = map(int, gol.split("-"))
-                rh = "V" if hs>aws else "D" if hs<aws else "E"
-                ra = "D" if rh=="V" else "V" if rh=="D" else "E"
-                texto = f"{local} {gol} {visita}"
-                PARTIDOS[clave_home].append((fecha_real, texto, rh, "", gol))
-                PARTIDOS[clave_away].append((fecha_real, "", ra, texto, gol))
-                print(f"AUTO NUEVO LaLiga: {texto}")
-                nuevos+=1
-            except:
-                continue
-    except Exception as e:
-        print(f"Error LaLiga: {e}")
+    print("Buscando partidos nuevos...")
+    print("Consultando LivescoreFootball API J7 (worldcup26.ir)...")
 
-    print(f"Nuevos detectados: {nuevos}")
+    BASE = "https://worldcup26.ir"
+    # Jornada 7 de LaLiga Hypermotion: 26-27-28 Sep 2026
+    headers = {"User-Agent": "Mozilla/5.0"}
+
+    endpoints = [
+        f"{BASE}/get/soccer/esp.2/fixtures?status=all&from=20260926&to=20260928&limit=100",
+        f"{BASE}/get/soccer/esp.2/scoreboard?dates=20260927",
+        f"{BASE}/get/soccer/esp.2/scoreboard?dates=20260926",
+        f"{BASE}/get/soccer/esp.2/scoreboard?dates=20260928",
+    ]
+
+    eventos = []
+    for url in endpoints:
+        try:
+            r = requests.get(url, headers=headers, timeout=20)
+            print(f" -> {url} -> {r.status_code} len {len(r.text)}")
+            if r.status_code!= 200: continue
+            data = r.json()
+            # la API puede devolver {events:[]} o {matches:[]} o lista directa
+            batch = data.get("events") or data.get("matches") or data.get("data") or data
+            if isinstance(batch, dict): batch = batch.get("events", [])
+            if isinstance(batch, list) and len(batch) > 0:
+                eventos.extend(batch)
+        except Exception as e:
+            print(f"Error {url}: {e}")
+
+    # Deduplicar por id
+    vistos = set()
+    unicos = []
+    for ev in eventos:
+        eid = str(ev.get("id") or ev.get("eventId") or ev.get("source",{}).get("event_key") or ev.get("slug"))
+        if eid in vistos: continue
+        vistos.add(eid)
+        unicos.append(ev)
+
+    print(f"Eventos totales recuperados: {len(unicos)}")
+
+    for ev in unicos:
+        try:
+            # La API guarda home/away y marcador en forma normalizada
+            home = ev.get("homeTeam",{}).get("name") or ev.get("home",{}).get("name") or ev["homeTeam"]
+            away = ev.get("awayTeam",{}).get("name") or ev.get("away",{}).get("name") or ev["awayTeam"]
+            # Si vienen como strings
+            if isinstance(home, dict): home = home.get("name")
+            if isinstance(away, dict): away = away.get("name")
+
+            status = ev.get("status","").lower()
+            # solo terminados
+            if "final" not in status and "finished" not in status and ev.get("statusType")!="finished":
+                # algunas respuestas usan scores ya finales aunque status sea otro
+                pass
+
+            hs = ev.get("homeScore",{}).get("current")
+            aws = ev.get("awayScore",{}).get("current")
+            # fallback a otros campos de la API
+            if hs is None: hs = ev.get("homeScore") or ev.get("score",{}).get("home")
+            if aws is None: aws = ev.get("awayScore") or ev.get("score",{}).get("away")
+            if hs is None or aws is None: continue
+
+            gol = f"{int(hs)}-{int(aws)}"
+            # fecha real del evento
+            ts = ev.get("startTimestamp") or ev.get("timestamp")
+            if ts:
+                fecha_real = datetime.fromtimestamp(int(ts)).strftime("%Y-%m-%d")
+            else:
+                fecha_real = ev.get("date","2026-09-27")[:10]
+
+            clave_home = clave_equipo(home)
+            clave_away = clave_equipo(away)
+            if not clave_home or not clave_away: continue
+
+            ya = any(fecha_real==x[0] and gol==x[4] for x in PARTIDOS.get(clave_home,[]))
+            if ya: continue
+
+            rh = "V" if int(hs)>int(aws) else "D" if int(hs)<int(aws) else "E"
+            ra = "D" if rh=="V" else "V" if rh=="D" else "E"
+            texto = f"{home} {gol} {away}"
+            PARTIDOS[clave_home].append((fecha_real, texto, rh, "", gol))
+            PARTIDOS[clave_away].append((fecha_real, "", ra, texto, gol))
+            print(f"AUTO NUEVO Livescore: {texto}")
+            nuevos+=1
+        except Exception as e:
+            continue
+
+    print(f"Nuevos partidos detectados: {nuevos}")
     return nuevos
-
 
 
 print("Buscando partidos nuevos...")
