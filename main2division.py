@@ -56,60 +56,55 @@ if historial_file.exists():
 
 def fetch_toda_jornada():
     nuevos = 0
-    import requests
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        "Accept": "*/*"
-    }
-    print("Consultando SofaScore J7 directo (tu captura)...")
+    try:
+        import cloudscraper, re
+        from datetime import datetime
+        scraper = cloudscraper.create_scraper(browser={'browser':'chrome','platform':'windows','mobile':False})
+        print("Consultando SofaScore J7 con cloudscraper (bypass GitHub ban)...")
 
-    # ID de LaLiga2 26/27 según tu URL - probamos 3 candidatos por si cambia
-    season_ids = [65376, 65095, 65932, 61627]
-
-    for season_id in season_ids:
-        try:
+        # Probamos directo con los IDs de temporada que salen en tu URL
+        for season_id in [97280, 65376, 65095]:
             url = f"https://api.sofascore.com/api/v1/unique-tournament/54/season/{season_id}/events/round/7"
-            r = requests.get(url, headers=headers, timeout=20)
-            if r.status_code!=200: continue
-            data = r.json()
-            events = data.get("events", [])
-            if len(events)<5: continue
-            print(f"SofaScore OK season {season_id}: {len(events)} eventos")
-            for ev in events:
-                if ev.get("status",{}).get("type")!="finished": continue
-                t1 = ev["homeTeam"]["shortName"] or ev["homeTeam"]["name"]
-                t2 = ev["awayTeam"]["shortName"] or ev["awayTeam"]["name"]
-                hs = ev["homeScore"]["current"]
-                aws = ev["awayScore"]["current"]
-                if hs is None: continue
-                gol = f"{hs}-{aws}"
-                # Fecha del evento
-                from datetime import datetime
-                fecha_real = datetime.fromtimestamp(ev["startTimestamp"]).strftime("%Y-%m-%d")
+            try:
+                r = scraper.get(url, timeout=20)
+                print(f"Intento season {season_id} -> status {r.status_code} len {len(r.text)}")
+                if r.status_code!= 200: continue
+                data = r.json()
+                events = data.get("events", [])
+                print(f" -> eventos: {len(events)}")
+                if len(events) < 5: continue
 
-                clave_home = clave_equipo(t1)
-                clave_away = clave_equipo(t2)
-                if not clave_home or not clave_away:
-                    # mapea nombres cortos de SofaScore
-                    clave_home = clave_equipo(ev["homeTeam"]["name"])
-                    clave_away = clave_equipo(ev["awayTeam"]["name"])
-                if not clave_home or not clave_away: continue
+                for ev in events:
+                    if ev.get("status",{}).get("type")!= "finished": continue
+                    hs = ev["homeScore"]["current"]
+                    aws = ev["awayScore"]["current"]
+                    if hs is None: continue
+                    gol = f"{hs}-{aws}"
+                    fecha_real = datetime.fromtimestamp(ev["startTimestamp"]).strftime("%Y-%m-%d")
+                    t1_name = ev["homeTeam"]["name"]
+                    t2_name = ev["awayTeam"]["name"]
 
-                ya = any(fecha_real==x[0] and gol==x[4] for x in PARTIDOS.get(clave_home,[]))
-                if ya: continue
+                    clave_home = clave_equipo(t1_name)
+                    clave_away = clave_equipo(t2_name)
+                    if not clave_home or not clave_away: continue
 
-                rh = "V" if hs>aws else "D" if hs<aws else "E"
-                ra = "D" if rh=="V" else "V" if rh=="D" else "E"
-                texto = f"{ev['homeTeam']['name']} {gol} {ev['awayTeam']['name']}"
-                PARTIDOS[clave_home].append((fecha_real, texto, rh, "", gol))
-                PARTIDOS[clave_away].append((fecha_real, "", ra, texto, gol))
-                print(f"AUTO NUEVO SOFASCORE: {texto}")
-                nuevos+=1
-            if nuevos>0:
-                return nuevos
-        except Exception as e:
-            print(f"Fallo season {season_id}: {e}")
-            continue
+                    ya = any(fecha_real==x[0] and gol==x[4] for x in PARTIDOS.get(clave_home,[]))
+                    if ya: continue
+
+                    rh = "V" if hs>aws else "D" if hs<aws else "E"
+                    ra = "D" if rh=="V" else "V" if rh=="D" else "E"
+                    texto = f"{t1_name} {gol} {t2_name}"
+                    PARTIDOS[clave_home].append((fecha_real, texto, rh, "", gol))
+                    PARTIDOS[clave_away].append((fecha_real, "", ra, texto, gol))
+                    print(f"AUTO NUEVO SOFASCORE: {texto}")
+                    nuevos+=1
+                if nuevos>0:
+                    return nuevos
+            except Exception as e:
+                print(f"Error season {season_id}: {e}")
+                continue
+    except Exception as e:
+        print(f"Error cloudscraper: {e}")
 
     print(f"Nuevos detectados via SofaScore: {nuevos}")
     return nuevos
