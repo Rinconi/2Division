@@ -90,48 +90,86 @@ if len(PARTIDOS["ceuta"]) == 6:
 
 # ========= FULL AUTO TODA LA JORNADA =========
 def fetch_toda_jornada():
-    madrid = ZoneInfo("Europe/Madrid")
-    hoy = datetime.now(madrid)
-    fechas = [(hoy - timedelta(days=i)).strftime("%Y%m%d") for i in range(0,4)] # busca ultimos 4 dias
     nuevos = 0
-    for fecha_api in fechas:
-        try:
-            url = f"https://site.api.espn.com/apis/site/v2/sports/soccer/esp.2/scoreboard?dates={fecha_api}"
-            r = requests.get(url, timeout=15, headers={"User-Agent":"Mozilla/5.0"})
-            data = r.json()
-            for ev in data.get("events",[]):
-                league = ev.get("competitions",[{}])[0].get("notes",[])
-                # filtramos solo segunda division españa (esp.2)
-                if ev.get("competitions",[{}])[0].get("type",{}).get("id")!= "1": # opcional
-                    pass
-                comp = ev["competitions"][0]
-                if not comp["status"]["type"]["completed"]: continue
-                c = comp["competitors"]
-                if len(c) < 2: continue
-                home = c[0] if c[0]["homeAway"]=="home" else c[1]
-                away = c[1] if c[0]["homeAway"]=="home" else c[0]
-                home_name = home["team"]["displayName"]
-                away_name = away["team"]["displayName"]
-                clave_home = clave_equipo(home_name)
-                clave_away = clave_equipo(away_name)
-                if not clave_home or not clave_away: continue
-                gol = f"{home['score']}-{away['score']}"
-                fecha_real = comp["date"][:10] # YYYY-MM-DD
-                # evita duplicados por fecha+gol
-                ya = any(fecha_real in x[0] and gol in x[4] for x in PARTIDOS.get(clave_home,[]))
-                if ya: continue
-                # resultado
-                hs = int(home['score']); aws = int(away['score'])
-                if hs > aws: rh, ra = "V","D"
-                elif hs < aws: rh, ra = "D","V"
-                else: rh, ra = "E","E"
-                texto = f"{home_name} {gol} {away_name}"
-                PARTIDOS[clave_home].append((fecha_real, texto, rh, "", gol))
-                PARTIDOS[clave_away].append((fecha_real, "", ra, texto, gol))
-                print(f"AUTO NUEVO: {texto}")
-                nuevos += 1
-        except Exception as e:
-            print(f"Fetch {fecha_api} pendiente: {e}")
+    try:
+        # Fuente fiable Hypermotion - trae toda la J7
+        urls = [
+            "https://www.vavel.com/en-us/data/laliga2/2026/2027/results",
+            "https://www.estadiodeportivo.com/resultados-laliga-hypermotion/"
+        ]
+        headers = {"User-Agent":"Mozilla/5.0"}
+        texto_html = ""
+        for u in urls:
+            try:
+                r = requests.get(u, timeout=15, headers=headers)
+                if r.status_code == 200 and "Ceuta" in r.text:
+                    texto_html = r.text
+                    break
+            except: pass
+
+        if not texto_html:
+            print("No se pudo leer fuente resultados")
+            return 0
+
+        # Busca patrones tipo "Ceuta 3 1 Real Sociedad" o "Granada 2 3 Andorra"
+        import re
+        # Limpia html
+        txt = re.sub(r'<[^>]+>', ' ', texto_html)
+
+        # Patrón: Equipo + numero + numero + Equipo
+        patron = re.compile(r'([A-Za-záéíóúÁÉÍÓÚñÑ\.\- ]{3,30})\s+(\d+)\s*[-:]\s*(\d+)\s+([A-Za-záéíóúÁÉÍÓÚñÑ\.\- ]{3,30})')
+
+        for m in patron.finditer(txt):
+            home_name = m.group(1).strip()
+            hs = m.group(2).strip()
+            aws = m.group(3).strip()
+            away_name = m.group(4).strip()
+
+            clave_home = clave_equipo(home_name)
+            clave_away = clave_equipo(away_name)
+            if not clave_home or not clave_away: continue
+            if clave_home == clave_away: continue
+
+            gol = f"{hs}-{aws}"
+            # fecha aprox - usa fecha del sistema si es J7
+            fecha_real = "2026-09-26" if clave_home in ["ceuta","celta-fortuna","tenerife","granada"] or clave_away in ["ceuta","celta-fortuna","tenerife","granada"] else datetime.now(ZoneInfo("Europe/Madrid")).strftime("%Y-%m-%d")
+
+            # evita duplicados
+            ya = any(gol in x[4] and (home_name.lower() in (x[1]+x[3]).lower() or away_name.lower() in (x[1]+x[3]).lower()) for x in PARTIDOS.get(clave_home,[]))
+            if ya: continue
+            if len(PARTIDOS[clave_home]) > 0 and fecha_real in PARTIDOS[clave_home][-1][0] and gol in PARTIDOS[clave_home][-1][4]: continue
+
+            if int(hs) > int(aws): rh, ra = "V","D"
+            elif int(hs) < int(aws): rh, ra = "D","V"
+            else: rh, ra = "E","E"
+
+            texto = f"{home_name} {gol} {away_name}"
+            PARTIDOS[clave_home].append((fecha_real, texto, rh, "", gol))
+            PARTIDOS[clave_away].append((fecha_real, "", ra, texto, gol))
+            print(f"AUTO NUEVO: {texto}")
+            nuevos += 1
+
+    except Exception as e:
+        print(f"Fetch auto error: {e}")
+
+    # Si aún no ha cogido los 4 del sábado, mételos a la fuerza (fallback seguro)
+    #if len(PARTIDOS["ceuta"]) == 6:
+    #    PARTIDOS["ceuta"].append(("2026-09-26","Ceuta 3-1 Real Sociedad B","V","","3-1"))
+    #    PARTIDOS["real-sociedad-b"].append(("2026-09-26","","D","Ceuta 3-1 Real Sociedad B","3-1"))
+    #    nuevos+=1
+    #if len(PARTIDOS["celta-fortuna"]) == 6:
+    #    PARTIDOS["celta-fortuna"].append(("2026-09-26","Celta Fortuna 1-1 Sabadell","E","","1-1"))
+    #    PARTIDOS["sabadell"].append(("2026-09-26","","E","Celta Fortuna 1-1 Sabadell","1-1"))
+    #    nuevos+=1
+    #if len(PARTIDOS["tenerife"]) == 6:
+    #    PARTIDOS["tenerife"].append(("2026-09-26","Tenerife 1-1 Cádiz","E","","1-1"))
+    #    PARTIDOS["cadiz"].append(("2026-09-26","","E","Tenerife 1-1 Cádiz","1-1"))
+    #    nuevos+=1
+    #if len(PARTIDOS["granada"]) == 6:
+    #    PARTIDOS["granada"].append(("2026-09-26","Granada 2-3 Andorra","D","","2-3"))
+    #    PARTIDOS["andorra"].append(("2026-09-26","","V","Granada 2-3 Andorra","2-3"))
+    #    nuevos+=1
+
     return nuevos
 
 print("Buscando partidos nuevos...")
