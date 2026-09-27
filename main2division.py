@@ -57,78 +57,61 @@ if historial_file.exists():
 def fetch_toda_jornada():
     nuevos = 0
     import requests
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Accept": "*/*"
+    }
+    print("Consultando SofaScore J7 directo (tu captura)...")
 
-    print("Consultando SofaScore LaLiga2 (sin token)...")
-    try:
-        headers = {
-            "User-Agent": "Mozilla/5.0",
-            "Accept": "application/json"
-        }
-        # 1. Busca el ID de la temporada 26/27 para LaLiga2 (tournament 54)
-        r = requests.get("https://api.sofascore.com/api/v1/unique-tournament/54/seasons", headers=headers, timeout=20)
-        seasons = r.json().get("seasons", [])
-        season_id = None
-        for s in seasons:
-            if "26/27" in s.get("name","") or s.get("year")=="26/27" or s.get("year")=="2026/27":
-                season_id = s["id"]
-                break
-        # si no encuentra 26/27, coge la última (es la actual)
-        if not season_id and seasons:
-            season_id = seasons[0]["id"]
-        print(f"SofaScore season_id: {season_id}")
+    # ID de LaLiga2 26/27 según tu URL - probamos 3 candidatos por si cambia
+    season_ids = [65376, 65095, 65932, 61627]
 
-        if not season_id:
-            return 0
+    for season_id in season_ids:
+        try:
+            url = f"https://api.sofascore.com/api/v1/unique-tournament/54/season/{season_id}/events/round/7"
+            r = requests.get(url, headers=headers, timeout=20)
+            if r.status_code!=200: continue
+            data = r.json()
+            events = data.get("events", [])
+            if len(events)<5: continue
+            print(f"SofaScore OK season {season_id}: {len(events)} eventos")
+            for ev in events:
+                if ev.get("status",{}).get("type")!="finished": continue
+                t1 = ev["homeTeam"]["shortName"] or ev["homeTeam"]["name"]
+                t2 = ev["awayTeam"]["shortName"] or ev["awayTeam"]["name"]
+                hs = ev["homeScore"]["current"]
+                aws = ev["awayScore"]["current"]
+                if hs is None: continue
+                gol = f"{hs}-{aws}"
+                # Fecha del evento
+                from datetime import datetime
+                fecha_real = datetime.fromtimestamp(ev["startTimestamp"]).strftime("%Y-%m-%d")
 
-        # 2. Trae la J7 - round 7
-        url = f"https://api.sofascore.com/api/v1/unique-tournament/54/season/{season_id}/events/round/7"
-        r = requests.get(url, headers=headers, timeout=20)
-        data = r.json()
-        events = data.get("events", [])
-        print(f"SofaScore eventos J7: {len(events)}")
+                clave_home = clave_equipo(t1)
+                clave_away = clave_equipo(t2)
+                if not clave_home or not clave_away:
+                    # mapea nombres cortos de SofaScore
+                    clave_home = clave_equipo(ev["homeTeam"]["name"])
+                    clave_away = clave_equipo(ev["awayTeam"]["name"])
+                if not clave_home or not clave_away: continue
 
-        # Si round no funciona, trae por fecha directa 25-28 sept
-        if len(events)==0:
-            url = f"https://api.sofascore.com/api/v1/unique-tournament/54/season/{season_id}/events/last/0"
-            # y también prueba scheduled-events de esos días
-            r = requests.get(f"https://api.sofascore.com/api/v1/sport/football/scheduled-events/2026-09-26", headers=headers, timeout=20)
-            events = [e for e in r.json().get("events",[]) if e.get("tournament",{}).get("uniqueTournament",{}).get("id")==54]
-            print(f"SofaScore por fecha 26/09: {len(events)}")
-            r2 = requests.get(f"https://api.sofascore.com/api/v1/sport/football/scheduled-events/2026-09-25", headers=headers, timeout=20)
-            events += [e for e in r2.json().get("events",[]) if e.get("tournament",{}).get("uniqueTournament",{}).get("id")==54]
+                ya = any(fecha_real==x[0] and gol==x[4] for x in PARTIDOS.get(clave_home,[]))
+                if ya: continue
 
-        for ev in events:
-            if ev.get("status",{}).get("type")!= "finished":
-                continue
-            t1 = ev["homeTeam"]["name"]
-            t2 = ev["awayTeam"]["name"]
-            hs = ev["homeScore"]["current"]
-            aws = ev["awayScore"]["current"]
-            gol = f"{hs}-{aws}"
-            fecha_real = ev["startTimestamp"]
-            from datetime import datetime
-            fecha_real = datetime.fromtimestamp(fecha_real).strftime("%Y-%m-%d")
+                rh = "V" if hs>aws else "D" if hs<aws else "E"
+                ra = "D" if rh=="V" else "V" if rh=="D" else "E"
+                texto = f"{ev['homeTeam']['name']} {gol} {ev['awayTeam']['name']}"
+                PARTIDOS[clave_home].append((fecha_real, texto, rh, "", gol))
+                PARTIDOS[clave_away].append((fecha_real, "", ra, texto, gol))
+                print(f"AUTO NUEVO SOFASCORE: {texto}")
+                nuevos+=1
+            if nuevos>0:
+                return nuevos
+        except Exception as e:
+            print(f"Fallo season {season_id}: {e}")
+            continue
 
-            clave_home = clave_equipo(t1)
-            clave_away = clave_equipo(t2)
-            if not clave_home or not clave_away:
-                continue
-
-            ya = any(fecha_real==x[0] and gol==x[4] for x in PARTIDOS.get(clave_home,[]))
-            if ya: continue
-
-            rh = "V" if hs>aws else "D" if hs<aws else "E"
-            ra = "D" if rh=="V" else "V" if rh=="D" else "E"
-            texto = f"{t1} {gol} {t2}"
-            PARTIDOS[clave_home].append((fecha_real, texto, rh, "", gol))
-            PARTIDOS[clave_away].append((fecha_real, "", ra, texto, gol))
-            print(f"AUTO NUEVO SOFASCORE: {texto}")
-            nuevos+=1
-
-    except Exception as e:
-        print(f"Error SofaScore: {e}")
-        import traceback; traceback.print_exc()
-
+    print(f"Nuevos detectados via SofaScore: {nuevos}")
     return nuevos
 
 
