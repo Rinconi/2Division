@@ -1,3 +1,4 @@
+cloudscraper
 fpdf2
 requests
 cairosvg
