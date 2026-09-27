@@ -58,7 +58,7 @@ def fetch_toda_jornada():
     nuevos = 0
     import requests, json
     from datetime import datetime
-    print("Consultando SofaScore J7 via proxy (bypass 403 GitHub)...")
+    print("Consultando allorigins J7 via proxy (bypass 403 GitHub)...")
 
     # Tu captura es de esta jornada
     proxied_urls = [
