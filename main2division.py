@@ -56,52 +56,65 @@ if historial_file.exists():
 
 def fetch_toda_jornada():
     nuevos = 0
-    madrid = ZoneInfo("Europe/Madrid")
-    hoy = datetime.now(madrid)
-    # Ventana J7: del 25 al 28
-    inicio = datetime(2026,9,25)
-    fin = hoy + timedelta(days=1)
-    fechas_str = f"{inicio.strftime('%Y%m%d')}-{fin.strftime('%Y%m%d')}"
-    url = f"https://site.api.espn.com/apis/site/v2/sports/soccer/esp.2/scoreboard?dates={fechas_str}"
-    print(f"Consultando ESPN esp.2: {url}")
+    print("Consultando OpenLigaDB esp2...")
     try:
-        r = requests.get(url, timeout=20, headers={"User-Agent":"okhttp/4.9.0"})
-        data = r.json()
-        events = data.get("events",[])
-        print(f"Eventos recibidos: {len(events)}")
-        for ev in events:
+        # Temporada 2026/27 J7 - API abierta, sin bloqueo
+        urls = [
+            "https://api.openligadb.de/getmatchdata/esp2/2026",
+            "https://api.openligadb.de/getmatchdata/esp2/2025"
+        ]
+        partidos_api = []
+        for url in urls:
             try:
-                comp = ev["competitions"][0]
-                if not comp["status"]["type"]["completed"]: continue
-                # solo finalizados
-                c = comp["competitors"]
-                home = next(x for x in c if x["homeAway"]=="home")
-                away = next(x for x in c if x["homeAway"]=="away")
-                home_name = home["team"]["displayName"]
-                away_name = away["team"]["displayName"]
-                clave_home = clave_equipo(home_name)
-                clave_away = clave_equipo(away_name)
-                if not clave_home or not clave_away:
-                    print(f"Sin mapeo: {home_name} vs {away_name}")
-                    continue
-                gol = f"{home['score']}-{away['score']}"
-                fecha_real = comp["date"][:10]
-                # duplicado?
-                ya = any(gol==x[4] and fecha_real==x[0] for x in PARTIDOS[clave_home])
-                if ya: continue
-                hs = int(home['score']); aws = int(away['score'])
-                rh, ra = ("V","D") if hs>aws else ("D","V") if hs<aws else ("E","E")
-                texto = f"{home_name} {gol} {away_name}"
-                PARTIDOS[clave_home].append((fecha_real, texto, rh, "", gol))
-                PARTIDOS[clave_away].append((fecha_real, "", ra, texto, gol))
-                print(f"AUTO NUEVO: {texto}")
-                nuevos+=1
-            except Exception as e:
-                print(f"Error parse evento: {e}")
+                r = requests.get(url, timeout=20, headers={"User-Agent":"Mozilla/5.0"})
+                if r.status_code == 200 and len(r.text) > 100:
+                    partidos_api = r.json()
+                    if len(partidos_api) > 0:
+                        break
+            except: pass
+
+        print(f"Partidos totales en API: {len(partidos_api)}")
+
+        for m in partidos_api:
+            # Solo J7 (GroupOrderID 7) y finalizados
+            if m.get("Group",{}).get("GroupOrderID")!= 7:
                 continue
+            if not m.get("MatchIsFinished"):
+                continue
+
+            t1 = m["Team1"]["TeamName"]
+            t2 = m["Team2"]["TeamName"]
+            res = m.get("MatchResults",[])
+            if not res: continue
+            # Resultado final
+            final = [x for x in res if x["ResultTypeID"]==2]
+            if not final: final = res
+            r = final[-1]
+            hs = r["PointsTeam1"]; aws = r["PointsTeam2"]
+            gol = f"{hs}-{aws}"
+            fecha_real = m["MatchDateTime"][:10]
+
+            clave_home = clave_equipo(t1)
+            clave_away = clave_equipo(t2)
+            if not clave_home or not clave_away:
+                print(f"Sin mapeo: {t1} vs {t2}")
+                continue
+
+            ya = any(fecha_real==x[0] and gol==x[4] for x in PARTIDOS.get(clave_home,[]))
+            if ya: continue
+
+            rh, ra = ("V","D") if hs>aws else ("D","V") if hs<aws else ("E","E")
+            texto = f"{t1} {gol} {t2}"
+            PARTIDOS[clave_home].append((fecha_real, texto, rh, "", gol))
+            PARTIDOS[clave_away].append((fecha_real, "", ra, texto, gol))
+            print(f"AUTO NUEVO: {texto}")
+            nuevos+=1
+
     except Exception as e:
-        print(f"Fetch ESPN fallo: {e}")
+        print(f"Fetch OpenLiga fallo: {e}")
+        import traceback; traceback.print_exc()
     return nuevos
+
 
 print("Buscando partidos nuevos...")
 nuevos = fetch_toda_jornada()
