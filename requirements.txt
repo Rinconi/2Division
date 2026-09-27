@@ -4,3 +4,4 @@ requests
 cairosvg
 beautifulsoup4
 lxml
+reportlab
