@@ -45,14 +45,151 @@ def clave_equipo(nombre_espn):
         if k in n: return v
     return None
 
-out_dir = pathlib.Path("informes"); out_dir.mkdir(exist_ok=True)
-historial_file = out_dir / "historial_hypermotion.json"
-if historial_file.exists():
+#out_dir = pathlib.Path("informes"); out_dir.mkdir(exist_ok=True)
+#historial_file = out_dir / "historial_hypermotion.json"
+#if historial_file.exists():
+#    try:
+#        j = json.loads(historial_file.read_text(encoding='utf-8'))
+#        for k,v in j.items():
+#            if len(v) > len(PARTIDOS.get(k,[])): PARTIDOS[k] = [tuple(x) for x in v]
+#    except: pass
+
+def fetch_laliga2_matches():
+    """Obtiene partidos de LaLiga2 desde livescoreFootball"""
     try:
-        j = json.loads(historial_file.read_text(encoding='utf-8'))
-        for k,v in j.items():
-            if len(v) > len(PARTIDOS.get(k,[])): PARTIDOS[k] = [tuple(x) for x in v]
-    except: pass
+        # Probar endpoint
+        url = "https://worldcup26.ir/api/matches"
+        params = {"league_id": 308, "season": 2026}
+        
+        print(f"🔄 Consultando: {url}")
+        response = requests.get(url, params=params, timeout=15)
+        
+        if response.status_code == 200:
+            data = response.json()
+            print(f"✓ Respuesta recibida: {len(data)} partidos")
+            return data if isinstance(data, list) else data.get("matches", [])
+        else:
+            print(f"✗ Error {response.status_code}")
+            return []
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        return []
+
+def procesar_partidos(matches):
+    """Procesa partidos y retorna tuplas en formato tu JSON"""
+    partidos = []
+    
+    for match in matches:
+        try:
+            fecha = match.get("date", "")[:10]  # YYYY-MM-DD
+            home_team = match.get("home_team", {}).get("name", "")
+            away_team = match.get("away_team", {}).get("name", "")
+            home_score = match.get("home_score")
+            away_score = match.get("away_score")
+            
+            # Verificar que tenga resultado
+            if home_score is None or away_score is None:
+                continue
+            
+            gol = f"{home_score}-{away_score}"
+            texto_home = f"{home_team} {gol} {away_team}"
+            
+            # Determinar resultado
+            if home_score > away_score:
+                result_home, result_away = "V", "D"
+            elif home_score < away_score:
+                result_home, result_away = "D", "V"
+            else:
+                result_home, result_away = "E", "E"
+            
+            clave_h = clave_equipo(home_team)
+            clave_a = clave_equipo(away_team)
+            
+            if clave_h and clave_a:
+                partidos.append({
+                    "fecha": fecha,
+                    "home_team": home_team,
+                    "away_team": away_team,
+                    "clave_home": clave_h,
+                    "clave_away": clave_a,
+                    "resultado_home": result_home,
+                    "resultado_away": result_away,
+                    "gol": gol,
+                    "texto": texto_home
+                })
+        except Exception as e:
+            print(f"  ⚠️  Error procesando partido: {e}")
+    
+    return partidos
+
+def actualizar_json(nuevos_partidos):
+    """Actualiza historial_hypermotion.json"""
+    historial_file = pathlib.Path("informes/historial_hypermotion.json")
+    
+    # Cargar JSON actual
+    with open(historial_file, 'r', encoding='utf-8') as f:
+        PARTIDOS = json.load(f)
+    
+    agregados = 0
+    
+    for p in nuevos_partidos:
+        # Verificar si ya existe
+        ya_existe = any(
+            x[4] == p["gol"] and p["home_team"] in x[1]
+            for x in PARTIDOS.get(p["clave_home"], [])
+        )
+        
+        if ya_existe:
+            print(f"  ✓ Ya existe: {p['texto']}")
+            continue
+        
+        # Agregar para equipo local
+        PARTIDOS[p["clave_home"]].append([
+            p["fecha"],
+            p["texto"],
+            p["resultado_home"],
+            "",
+            p["gol"]
+        ])
+        
+        # Agregar para equipo visitante
+        PARTIDOS[p["clave_away"]].append([
+            p["fecha"],
+            "",
+            p["resultado_away"],
+            p["texto"],
+            p["gol"]
+        ])
+        
+        print(f"  ✅ Agregado: {p['texto']}")
+        agregados += 1
+    
+    # Guardar
+    with open(historial_file, 'w', encoding='utf-8') as f:
+        json.dump(PARTIDOS, f, ensure_ascii=False, indent=2)
+    
+    print(f"\n📊 {agregados} partidos nuevos\n")
+    return agregados
+
+if __name__ == "__main__":
+    print("=" * 60)
+    print("🔄 ACTUALIZAR LaLiga2 - Partidos Nuevos")
+    print("=" * 60 + "\n")
+    
+    matches = fetch_laliga2_matches()
+    
+    if matches:
+        nuevos_partidos = procesar_partidos(matches)
+        if nuevos_partidos:
+            actualizar_json(nuevos_partidos)
+            print("✅ JSON actualizado. Ejecuta: python main2division.py")
+        else:
+            print("⚠️  No se encontraron partidos nuevos sin mapear")
+    else:
+        print("❌ No se pudo obtener datos. Verifica la API")
+
+
+
 
 def fetch_toda_jornada():
     nuevos = 0
