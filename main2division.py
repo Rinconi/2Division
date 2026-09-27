@@ -7,31 +7,12 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.enums import TA_CENTER
 
-PARTIDOS = {
-    "castellon": [("2026-08-14","","V","Real Sociedad B 0-1 Castellón","0-1"),("2026-08-23","Castellón 0-0 Sabadell","E","","0-0"),("2026-08-31","", "V","Celta Fortuna 1-2 Castellón","1-2")],
-    "eibar": [("2026-08-16","Eibar 1-3 Tenerife","D","","1-3"),("2026-08-23","Eibar 1-0 Valladolid","V","","1-0"),("2026-08-30","","V","Andorra 0-1 Eibar","0-1")],
-    "mallorca": [("2026-08-15","Mallorca 2-0 Valladolid","V","","2-0"),("2026-08-24","","D","Granada 2-0 Mallorca","2-0"),("2026-08-30","Mallorca 3-0 Ceuta","V","","3-0")],
-    "almeria": [("2026-08-17","Almería 3-0 Eldense","V","","3-0"),("2026-08-23","","D","Tenerife 1-0 Almería","1-0"),("2026-08-29","","D","Sabadell 1-0 Almería","1-0")],
-    "burgos": [("2026-08-16","Burgos 3-2 Córdoba","V","","3-2"),("2026-08-23","","D","Sporting 1-0 Burgos","1-0"),("2026-08-31","Burgos 2-2 Real Sociedad B","E","","2-2")],
-    "sabadell": [("2026-08-17","","E","Sporting 0-0 Sabadell","0-0"),("2026-08-23","","E","Castellón 0-0 Sabadell","0-0"),("2026-08-29","Sabadell 1-0 Almería","V","","1-0")],
-    "leganes": [("2026-08-16","","E","Girona 1-1 Leganés","1-1"),("2026-08-22","","V","Real Oviedo 0-1 Leganés","0-1"),("2026-08-29","Leganés 1-0 Eldense","V","","1-0")],
-    "girona": [("2026-08-16","Girona 1-1 Leganés","E","","1-1"),("2026-08-21","","D","Córdoba 2-1 Girona","2-1"),("2026-08-29","Girona 5-2 Las Palmas","V","","5-2")],
-    "sporting-gijon": [("2026-08-17","Sporting 0-0 Sabadell","E","","0-0"),("2026-08-23","Sporting 1-0 Burgos","V","","1-0"),("2026-08-28","","V","Tenerife 0-1 Sporting","0-1")],
-    "tenerife": [("2026-08-16","","V","Eibar 1-3 Tenerife","1-3"),("2026-08-23","Tenerife 1-0 Almería","V","","1-0"),("2026-08-28","Tenerife 0-1 Sporting","D","","0-1")],
-    "las-palmas": [("2026-08-16","Las Palmas 2-1 Albacete","V","","2-1"),("2026-08-22","","V","Ceuta 0-2 Las Palmas","0-2"),("2026-08-29","","D","Girona 5-2 Las Palmas","5-2")],
-    "real-sociedad-b": [("2026-08-14","Real Sociedad B 0-1 Castellón","D","","0-1"),("2026-08-22","","V","Albacete 1-2 Real Sociedad B","1-2"),("2026-08-31","","E","Burgos 2-2 Real Sociedad B","2-2")],
-    "real-oviedo": [("2026-08-16","Real Oviedo 0-0 Granada","E","","0-0"),("2026-08-22","Real Oviedo 0-1 Leganés","D","","0-1"),("2026-08-30","","V","Albacete 0-1 Real Oviedo","0-1")],
-    "granada": [("2026-08-16","","E","Real Oviedo 0-0 Granada","0-0"),("2026-08-24","Granada 2-0 Mallorca","V","","2-0"),("2026-08-30","","V","Córdoba 1-3 Granada","1-3")],
-    "celta-fortuna": [("2026-08-16","","E","Cádiz 0-0 Celta Fortuna","0-0"),("2026-08-24","Celta Fortuna 4-2 Andorra","V","","4-2"),("2026-08-31","Celta Fortuna 1-2 Castellón","D","","1-2")],
-    "cordoba": [("2026-08-16","","D","Burgos 3-2 Córdoba","3-2"),("2026-08-21","Córdoba 2-1 Girona","V","","2-1"),("2026-08-30","Córdoba 1-3 Granada","D","","1-3")],
-    "eldense": [("2026-08-17","","D","Almería 3-0 Eldense","3-0"),("2026-08-22","Eldense 2-2 Cádiz","E","","2-2"),("2026-08-29","","D","Leganés 1-0 Eldense","1-0")],
-    "valladolid": [("2026-08-15","","D","Mallorca 2-0 Valladolid","2-0"),("2026-08-23","","D","Eibar 1-0 Valladolid","1-0"),("2026-08-30","","E","Cádiz 1-1 Valladolid","1-1")],
-    "cadiz": [("2026-08-16","Cádiz 0-0 Celta Fortuna","E","","0-0"),("2026-08-22","","E","Eldense 2-2 Cádiz","2-2"),("2026-08-30","Cádiz 1-1 Valladolid","E","","1-1")],
-    "andorra": [("2026-08-15","Andorra 5-1 Ceuta","V","","5-1"),("2026-08-24","","D","Celta Fortuna 4-2 Andorra","4-2"),("2026-08-30","Andorra 0-1 Eibar","D","","0-1")],
-    "albacete": [("2026-08-16","","D","Las Palmas 2-1 Albacete","2-1"),("2026-08-22","Albacete 1-2 Real Sociedad B","D","","1-2"),("2026-08-30","Albacete 0-1 Real Oviedo","D","","0-1")],
-    "ceuta": [("2026-08-15","","D","Andorra 5-1 Ceuta","5-1"),("2026-08-22","Ceuta 0-2 Las Palmas","D","","0-2"),("2026-08-30","","D","Mallorca 3-0 Ceuta","3-0")],
-}
+# Directorio y archivo
+out_dir = pathlib.Path("informes")
+out_dir.mkdir(exist_ok=True)
+historial_file = out_dir / "historial_hypermotion.json"
 
+# MAPEO de equipos
 MAPEO = {
     "ceuta":"ceuta","ad ceuta":"ceuta",
     "castellon":"castellon","cd castellon":"castellon","castellón":"castellon",
@@ -58,33 +39,80 @@ MAPEO = {
 }
 
 def normaliza_nombre(s):
+    """Normaliza nombres de equipos para búsqueda"""
     s = s.lower()
     s = re.sub(r'[^a-z0-9 ]',' ',s)
     return s.strip()
 
 def clave_equipo(nombre_espn):
+    """Obtiene la clave de equipo del mapeo"""
     n = normaliza_nombre(nombre_espn)
-    for k,v in MAPEO.items():
+    for k, v in MAPEO.items():
         if k in n: 
             return v
     return None
 
-# ✅ CREAR out_dir AL INICIO
-out_dir = pathlib.Path("informes")
-out_dir.mkdir(exist_ok=True)
-historial_file = out_dir / "historial_hypermotion.json"
+def cargar_partidos():
+    """Carga PARTIDOS desde JSON, o crea estructura vacía"""
+    global PARTIDOS
+    
+    if historial_file.exists():
+        try:
+            with open(historial_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                # Convertir listas a tuplas
+                PARTIDOS = {k: [tuple(x) for x in v] for k, v in data.items()}
+            print(f"✅ Cargados partidos desde {historial_file.name}")
+            return PARTIDOS
+        except Exception as e:
+            print(f"❌ Error cargando JSON: {e}")
+    
+    # Si no existe o falla, crear estructura con todos los equipos
+    PARTIDOS = {
+        "castellon": [],
+        "eibar": [],
+        "mallorca": [],
+        "almeria": [],
+        "burgos": [],
+        "sabadell": [],
+        "leganes": [],
+        "girona": [],
+        "sporting-gijon": [],
+        "tenerife": [],
+        "las-palmas": [],
+        "real-sociedad-b": [],
+        "real-oviedo": [],
+        "granada": [],
+        "celta-fortuna": [],
+        "cordoba": [],
+        "eldense": [],
+        "valladolid": [],
+        "cadiz": [],
+        "andorra": [],
+        "albacete": [],
+        "ceuta": [],
+    }
+    print("⚠️  Estructura PARTIDOS vacía (JSON no encontrado)")
+    return PARTIDOS
+
+def guardar_partidos():
+    """Guarda PARTIDOS en JSON"""
+    with open(historial_file, 'w', encoding='utf-8') as f:
+        json.dump({k:[list(x) for x in v] for k,v in PARTIDOS.items()}, f, ensure_ascii=False, indent=2)
+    print(f"✅ JSON guardado: {historial_file}")
 
 def fetch_toda_jornada():
+    """Obtiene partidos nuevos de la API"""
     global PARTIDOS
     nuevos = 0
-    print("Buscando partidos nuevos...")
-    print("Consultando LivescoreFootball API (worldcup26.ir)...")
+    print("\n🔄 Buscando partidos nuevos en la API...")
+    print("Consultando LivescoreFootball (worldcup26.ir)...\n")
 
     BASE = "https://worldcup26.ir"
     headers = {"User-Agent": "Mozilla/5.0"}
 
     endpoints = [
-        f"{BASE}/get/soccer/esp.2/fixtures?status=all&from=20260926&to=20260928&limit=100",
+        f"{BASE}/get/soccer/esp.2/fixtures?status=all&from=20260926&to=20261231&limit=500",
         f"{BASE}/get/soccer/esp.2/scoreboard?dates=20260927",
         f"{BASE}/get/soccer/esp.2/scoreboard?dates=20260926",
         f"{BASE}/get/soccer/esp.2/scoreboard?dates=20260928",
@@ -94,7 +122,7 @@ def fetch_toda_jornada():
     for url in endpoints:
         try:
             r = requests.get(url, headers=headers, timeout=20)
-            print(f" -> {url} -> {r.status_code} len {len(r.text)}")
+            print(f" -> {r.status_code} {len(r.text)} bytes")
             if r.status_code != 200: 
                 continue
             data = r.json()
@@ -104,8 +132,9 @@ def fetch_toda_jornada():
             if isinstance(batch, list) and len(batch) > 0:
                 eventos.extend(batch)
         except Exception as e:
-            print(f"Error {url}: {e}")
+            print(f" ✗ Error: {e}")
 
+    # Deduplicar
     vistos = set()
     unicos = []
     for ev in eventos:
@@ -115,9 +144,9 @@ def fetch_toda_jornada():
         vistos.add(eid)
         unicos.append(ev)
 
-    print(f"Eventos totales recuperados: {len(unicos)}\n")
+    print(f"📊 Eventos recuperados: {len(unicos)}\n")
 
-    for idx, ev in enumerate(unicos):
+    for ev in unicos:
         try:
             home = ev.get("homeTeam",{}).get("name") or ev.get("home",{}).get("name") or ev.get("homeTeam")
             away = ev.get("awayTeam",{}).get("name") or ev.get("away",{}).get("name") or ev.get("awayTeam")
@@ -147,7 +176,6 @@ def fetch_toda_jornada():
             clave_home = clave_equipo(home)
             clave_away = clave_equipo(away)
             
-            # DEBUG
             if not clave_home or not clave_away:
                 print(f"  ⚠️  No mapeado: {home} vs {away}")
                 continue
@@ -155,7 +183,6 @@ def fetch_toda_jornada():
             # Verificar si ya existe
             ya = any(fecha_real==x[0] and gol==x[4] for x in PARTIDOS.get(clave_home,[]))
             if ya: 
-                print(f"  ✓ Ya existe: {home} {gol} {away}")
                 continue
 
             rh = "V" if int(hs)>int(aws) else "D" if int(hs)<int(aws) else "E"
@@ -166,13 +193,12 @@ def fetch_toda_jornada():
             PARTIDOS[clave_away].append((fecha_real, "", ra, texto, gol))
             
             print(f"  ✅ Agregado: {texto}")
-            nuevos+=1
+            nuevos += 1
             
         except Exception as e:
-            print(f"  ❌ Error procesando evento {idx}: {e}")
             continue
 
-    print(f"\n📊 Nuevos partidos detectados: {nuevos}\n")
+    print(f"\n📊 Nuevos partidos detectados: {nuevos}")
     return nuevos
 
 def recalcular(d):
@@ -213,19 +239,15 @@ def recalcular(d):
     t.sort(key=lambda x: (x[2], x[6]-x[7], x[6]), reverse=True)
     return t
 
-def guardar_partidos():
-    """Guarda PARTIDOS en JSON"""
-    with open(historial_file, 'w', encoding='utf-8') as f:
-        json.dump({k:[list(x) for x in v] for k,v in PARTIDOS.items()}, f, ensure_ascii=False, indent=2)
-    print("✅ JSON guardado")
-
-def normaliza(s): 
-    return s.lower().replace("-","").replace("_","").replace(" ","")
-
 def get_logo(eq):
+    """Obtiene el logo de un equipo si existe"""
     logos_path = pathlib.Path("logos")
     if not logos_path.exists():
         return None
+    
+    def normaliza(s): 
+        return s.lower().replace("-","").replace("_","").replace(" ","")
+    
     logos = {normaliza(p.stem): p for p in logos_path.glob("*.png")}
     k = normaliza(eq)
     for lk, path in logos.items():
@@ -234,7 +256,7 @@ def get_logo(eq):
     return None
 
 def generar_pdf():
-    """Genera el PDF con la clasificación"""
+    """Genera el PDF con la clasificación y fichas de equipos"""
     fecha_str = datetime.now(ZoneInfo("Europe/Madrid")).strftime("%Y-%m-%d")
     hora_str = datetime.now(ZoneInfo("Europe/Madrid")).strftime("%d/%m/%Y - %H:%M")
     pdf_file = out_dir / f"Informe_LaLiga_Hypermotion_{fecha_str}.pdf"
@@ -245,6 +267,7 @@ def generar_pdf():
     
     TABLA = recalcular(PARTIDOS)
     
+    # Portada
     story.append(Paragraph(f"<b>LaLiga Hypermotion - {hora_str}</b>", styles['Title']))
     style_sub = styles['Normal'].clone('subtitulo')
     style_sub.alignment = TA_CENTER
@@ -256,13 +279,14 @@ def generar_pdf():
     story.append(Paragraph(f"Clasificacion EN VIVO - Jornada {J}", style_sub))
     story.append(Spacer(1,12))
     
+    # Tabla de clasificación
     data = [["#","","Equipo","PJ","PTS","G","E","P","GF","GC","DG"]]
     for i,(eq,pj,pts,g,e,p,gf,gc) in enumerate(TABLA,1):
         dg = gf-gc
         dg_str = f"+{dg}" if dg>0 else str(dg)
         lp = get_logo(eq)
         img = Image(lp, width=14, height=14) if lp and pathlib.Path(lp).exists() else ""
-        data.append([str(i),img,eq.replace("-"," "),str(pj),str(pts),str(g),str(e),str(p),str(gf),str(gc),dg_str])
+        data.append([str(i),img,eq.replace("-"," ").title(),str(pj),str(pts),str(g),str(e),str(p),str(gf),str(gc),dg_str])
     
     table = Table(data, colWidths=[22,20,125,28,32,25,25,25,32,32,32])
     st = TableStyle([
@@ -270,16 +294,18 @@ def generar_pdf():
         ('TEXTCOLOR',(0,0),(-1,0),colors.white),
         ('ALIGN',(0,0),(-1,-1),'CENTER'),
         ('ALIGN',(2,1),(2,-1),'LEFT'),
-        ('GRID',(0,0),(-1,-1),0.3,colors.black)
+        ('GRID',(0,0),(-1,-1),0.3,colors.black),
+        ('FONTSIZE',(0,0),(-1,-1),9)
     ])
     
+    # Colores por posición
     for r in range(1,len(data)):
         if r<=2: 
-            bg = colors.HexColor("#D4EDDA")
+            bg = colors.HexColor("#D4EDDA")  # Verde - Playoff
         elif r<=6: 
-            bg = colors.HexColor("#FFF3CD")
+            bg = colors.HexColor("#FFF3CD")  # Amarillo - Otros
         elif r>=19: 
-            bg = colors.HexColor("#F8D7DA")
+            bg = colors.HexColor("#F8D7DA")  # Rojo - Descenso
         elif r%2==0: 
             bg = colors.HexColor("#FFFFFF")
         else: 
@@ -290,55 +316,60 @@ def generar_pdf():
     story.append(table)
     story.append(PageBreak())
     
+    # Fichas de equipos
     for idx,(eq,pj,pts,g,e,p,gf,gc) in enumerate(TABLA,1):
+        # Estadísticas en casa/fuera
         casa_v=casa_e=casa_d=fuera_v=fuera_e=fuera_d=0
         for f,c,r,fu,gol in PARTIDOS[eq]:
-            if c!="":
+            if c!="":  # En casa
                 if r=='V': casa_v+=1
                 elif r=='E': casa_e+=1
                 else: casa_d+=1
-            else:
+            else:  # Fuera
                 if r=='V': fuera_v+=1
                 elif r=='E': fuera_e+=1
                 else: fuera_d+=1
         
-        lp=get_logo(eq)
-        style_team_big=styles['Normal'].clone(f'team_big_{idx}')
-        style_team_big.fontSize=20
-        style_team_big.fontName='Helvetica-Bold'
-        style_pj_big=styles['Normal'].clone(f'pj_big_{idx}')
-        style_pj_big.fontSize=12
-        style_pj_big.fontName='Helvetica-Bold'
+        # Encabezado del equipo
+        lp = get_logo(eq)
+        style_team_big = styles['Normal'].clone(f'team_big_{idx}')
+        style_team_big.fontSize = 20
+        style_team_big.fontName = 'Helvetica-Bold'
+        style_pj_big = styles['Normal'].clone(f'pj_big_{idx}')
+        style_pj_big.fontSize = 12
+        style_pj_big.fontName = 'Helvetica-Bold'
         
         if lp and pathlib.Path(lp).exists():
-            logo_img=Image(lp,width=60,height=60)
-            header_data=[[logo_img,Paragraph(f"<b>{eq.replace('-',' ').title()} - Pos {idx} | {pts} pts</b>",style_team_big)],["",Paragraph(f"PJ:{pj} G:{g} E:{e} P:{p} GF:{gf} GC:{gc} DG:{gf-gc}",style_pj_big)]]
-            ht=Table(header_data,colWidths=[70,400])
+            logo_img = Image(lp, width=60, height=60)
+            header_data = [[logo_img,Paragraph(f"<b>{eq.replace('-',' ').title()} - Pos {idx} | {pts} pts</b>",style_team_big)],["",Paragraph(f"PJ:{pj} G:{g} E:{e} P:{p} GF:{gf} GC:{gc} DG:{gf-gc}",style_pj_big)]]
+            ht = Table(header_data, colWidths=[70,400])
             ht.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'MIDDLE'),('SPAN',(0,0),(0,1))]))
         else:
-            header_data=[[Paragraph(f"<b>{eq.replace('-',' ').title()} - Pos {idx} | {pts} pts</b>",style_team_big)],[Paragraph(f"PJ:{pj} G:{g} E:{e} P:{p} GF:{gf} GC:{gc} DG:{gf-gc}",style_pj_big)]]
-            ht=Table(header_data,colWidths=[470])
+            header_data = [[Paragraph(f"<b>{eq.replace('-',' ').title()} - Pos {idx} | {pts} pts</b>",style_team_big)],[Paragraph(f"PJ:{pj} G:{g} E:{e} P:{p} GF:{gf} GC:{gc} DG:{gf-gc}",style_pj_big)]]
+            ht = Table(header_data, colWidths=[470])
         
         story.append(ht)
         story.append(Spacer(1,10))
         
-        cajas_data=[[Paragraph(f"<b>EN CASA:</b> {casa_v}V - {casa_e}E - {casa_d}D",styles['Normal']),Paragraph(f"<b>FUERA:</b> {fuera_v}V - {fuera_e}E - {fuera_d}D",styles['Normal'])]]
-        cajas=Table(cajas_data,colWidths=[150,150])
+        # Estadísticas en casa/fuera
+        cajas_data = [[Paragraph(f"<b>EN CASA:</b> {casa_v}V - {casa_e}E - {casa_d}D",styles['Normal']),Paragraph(f"<b>FUERA:</b> {fuera_v}V - {fuera_e}E - {fuera_d}D",styles['Normal'])]]
+        cajas = Table(cajas_data, colWidths=[150,150])
         cajas.setStyle(TableStyle([('BACKGROUND',(0,0),(0,0),colors.HexColor("#E8F5E9")),('BACKGROUND',(1,0),(1,0),colors.HexColor("#FFEBEE")),('BOX',(0,0),(-1,-1),0.5,colors.black)]))
         story.append(cajas)
         story.append(Spacer(1,12))
         
-        center_style=styles['Normal'].clone(f'centered_{idx}')
-        center_style.alignment=TA_CENTER
+        # Historial de partidos
+        center_style = styles['Normal'].clone(f'centered_{idx}')
+        center_style.alignment = TA_CENTER
         story.append(Paragraph(f"<b>Partidos J1-{J}</b>",center_style))
         story.append(Spacer(1,6))
         
-        pd=[["Fecha","EN CASA","R","FUERA","GOL"]]
+        pd = [["Fecha","EN CASA","R","FUERA","GOL"]]
         for row in PARTIDOS[eq]:
             pd.append(list(row))
         
-        pt=Table(pd,colWidths=[70,170,25,170,40])
-        ps=TableStyle([
+        pt = Table(pd, colWidths=[70,170,25,170,40])
+        ps = TableStyle([
             ('BACKGROUND',(0,0),(-1,0),colors.black),
             ('TEXTCOLOR',(0,0),(-1,0),colors.white),
             ('ALIGN',(0,0),(-1,-1),'CENTER'),
@@ -360,19 +391,31 @@ def generar_pdf():
         story.append(PageBreak())
     
     doc.build(story)
-    print(f"✅ PDF J{J} generado - {pdf_file}")
+    print(f"✅ PDF generado: {pdf_file}")
 
-# ✅ ORDEN CORRECTO: Buscar partidos primero, luego generar PDF
+# MAIN
 if __name__ == "__main__":
-    print("=" * 60)
-    print("🔄 ACTUALIZAR LaLiga Hypermotion")
-    print("=" * 60 + "\n")
+    print("=" * 70)
+    print("🏆 LALIGA HYPERMOTION - ACTUALIZAR CLASIFICACIÓN")
+    print("=" * 70)
     
+    # 1. Cargar datos del JSON
+    PARTIDOS = cargar_partidos()
+    
+    # 2. Buscar partidos nuevos
     nuevos = fetch_toda_jornada()
     
-    guardar_partidos()
+    # 3. Guardar cambios
+    if nuevos > 0:
+        guardar_partidos()
+        print(f"\n✅ {nuevos} partidos nuevos añadidos")
+    else:
+        print("\n✓ Sin cambios en los datos")
     
-    print("Generando PDF...")
+    # 4. Generar PDF con datos completos
+    print("\n📄 Generando informe PDF...")
     generar_pdf()
     
-    print("\n✅ Proceso completado")
+    print("\n" + "=" * 70)
+    print("✅ PROCESO COMPLETADO")
+    print("=" * 70)
