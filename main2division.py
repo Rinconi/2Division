@@ -7,7 +7,6 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.enums import TA_CENTER
 
-# ========= SEED J1-J6 =========
 PARTIDOS = {
     "castellon": [("2026-08-14","","V","Real Sociedad B 0-1 Castellón","0-1"),("2026-08-23","Castellón 0-0 Sabadell","E","","0-0"),("2026-08-31","", "V","Celta Fortuna 1-2 Castellón","1-2"),("2026-09-06","Castellón 2-0 Albacete","V","","2-0"),("2026-09-12","","V","Girona 1-2 Castellón","1-2"),("2026-09-19","Castellón 5-0 Tenerife","V","","5-0")],
     "eibar": [("2026-08-16","Eibar 1-3 Tenerife","D","","1-3"),("2026-08-23","Eibar 1-0 Valladolid","V","","1-0"),("2026-08-30","","V","Andorra 0-1 Eibar","0-1"),("2026-09-06","Eibar 3-0 Granada","V","","3-0"),("2026-09-14","","V","Celta Fortuna 0-4 Eibar","0-4"),("2026-09-19","","V","Eldense 1-2 Eibar","1-2")],
@@ -16,7 +15,7 @@ PARTIDOS = {
     "burgos": [("2026-08-16","Burgos 3-2 Córdoba","V","","3-2"),("2026-08-23","","D","Sporting 1-0 Burgos","1-0"),("2026-08-31","Burgos 2-2 Real Sociedad B","E","","2-2"),("2026-09-06","","E","Real Oviedo 0-0 Burgos","0-0"),("2026-09-11","Burgos 3-1 Ceuta","V","","3-1"),("2026-09-20","","V","Las Palmas 1-2 Burgos","1-2")],
     "sabadell": [("2026-08-17","","E","Sporting 0-0 Sabadell","0-0"),("2026-08-23","","E","Castellón 0-0 Sabadell","0-0"),("2026-08-29","Sabadell 1-0 Almería","V","","1-0"),("2026-09-07","Sabadell 3-2 Córdoba","V","","3-2"),("2026-09-13","","D","Mallorca 2-0 Sabadell","2-0"),("2026-09-20","Sabadell 3-1 Real Oviedo","V","","3-1")],
     "leganes": [("2026-08-16","","E","Girona 1-1 Leganés","1-1"),("2026-08-22","","V","Real Oviedo 0-1 Leganés","0-1"),("2026-08-29","Leganés 1-0 Eldense","V","","1-0"),("2026-09-04","","E","Las Palmas 0-0 Leganés","0-0"),("2026-09-13","","D","Tenerife 2-0 Leganés","2-0"),("2026-09-20","Leganés 3-2 Granada","V","","3-2")],
-    "girona": [("2026-08-16","Girona 1-1 Leganés","E","","1-1"),("2026-08-21","","D","Córdoba 2-1 Girona","2-1"),("2026-08-29","Girona 5-2 Las Palmas","V","","5-2"),("2026-09-05","","V","Sporting 0-2 Girona","0-2"),("2026-09-12","Girona 1-2 Castellón","D","","1-2"),("2026-09-19","","V","Cádiz 1-2 Girona","1-2")],
+    "girona": [("2026-08-16","Girona 1-1 Leganés","E","","1-1"),("2026-08-21","","D","Córdoba 2-1 Girona","2-1"),("2026-08-29","Girona 5-2 Las Palmas","V","","5-2"),("2026-09-05","","V","Sporting 0-2 Girona","0-2"),("2026-09-12","Girona 1-2 Castellón","D","","1-2"),("2026-09-19","","V","Cádiz 1-2 Girona","1-2"),("2026-09-25","Girona 2-0 Albacete","V","","2-0")],
     "sporting-gijon": [("2026-08-17","Sporting 0-0 Sabadell","E","","0-0"),("2026-08-23","Sporting 1-0 Burgos","V","","1-0"),("2026-08-28","","V","Tenerife 0-1 Sporting","0-1"),("2026-09-05","Sporting 0-2 Girona","D","","0-2"),("2026-09-13","Sporting 0-1 Eldense","D","","0-1"),("2026-09-19","","V","Andorra 1-3 Sporting","1-3")],
     "tenerife": [("2026-08-16","","V","Eibar 1-3 Tenerife","1-3"),("2026-08-23","Tenerife 1-0 Almería","V","","1-0"),("2026-08-28","Tenerife 0-1 Sporting","D","","0-1"),("2026-09-05","","E","Real Sociedad B 1-1 Tenerife","1-1"),("2026-09-13","Tenerife 2-0 Leganés","V","","2-0"),("2026-09-19","","D","Castellón 5-0 Tenerife","5-0")],
     "las-palmas": [("2026-08-16","Las Palmas 2-1 Albacete","V","","2-1"),("2026-08-22","","V","Ceuta 0-2 Las Palmas","0-2"),("2026-08-29","","D","Girona 5-2 Las Palmas","5-2"),("2026-09-04","Las Palmas 0-0 Leganés","E","","0-0"),("2026-09-13","","V","Cádiz 0-1 Las Palmas","0-1"),("2026-09-20","Las Palmas 1-2 Burgos","D","","1-2")],
@@ -29,41 +28,16 @@ PARTIDOS = {
     "valladolid": [("2026-08-15","","D","Mallorca 2-0 Valladolid","2-0"),("2026-08-23","","D","Eibar 1-0 Valladolid","1-0"),("2026-08-30","","E","Cádiz 1-1 Valladolid","1-1"),("2026-09-05","Valladolid 1-0 Andorra","V","","1-0"),("2026-09-13","Valladolid 0-3 Real Oviedo","D","","0-3"),("2026-09-20","","E","Ceuta 1-1 Valladolid","1-1")],
     "cadiz": [("2026-08-16","Cádiz 0-0 Celta Fortuna","E","","0-0"),("2026-08-22","","E","Eldense 2-2 Cádiz","2-2"),("2026-08-30","Cádiz 1-1 Valladolid","E","","1-1"),("2026-09-06","","D","Almería 3-2 Cádiz","3-2"),("2026-09-13","Cádiz 0-1 Las Palmas","D","","0-1"),("2026-09-19","Cádiz 1-2 Girona","D","","1-2")],
     "andorra": [("2026-08-15","Andorra 5-1 Ceuta","V","","5-1"),("2026-08-24","","D","Celta Fortuna 4-2 Andorra","4-2"),("2026-08-30","Andorra 0-1 Eibar","D","","0-1"),("2026-09-05","","D","Valladolid 1-0 Andorra","1-0"),("2026-09-12","Andorra 1-3 Real Sociedad B","D","","1-3"),("2026-09-19","Andorra 1-3 Sporting","D","","1-3")],
-    "albacete": [("2026-08-16","","D","Las Palmas 2-1 Albacete","2-1"),("2026-08-22","Albacete 1-2 Real Sociedad B","D","","1-2"),("2026-08-30","Albacete 0-1 Real Oviedo","D","","0-1"),("2026-09-06","","D","Castellón 2-0 Albacete","2-0"),("2026-09-12","","E","Granada 1-1 Albacete","1-1"),("2026-09-18","Albacete 1-2 Córdoba","D","","1-2")],
-    "ceuta": [("2026-08-15","","D","Andorra 5-1 Ceuta","5-1"),("2026-08-22","Ceuta 0-2 Las Palmas","D","","0-2"),("2026-08-30","","D","Mallorca 3-0 Ceuta","3-0"),("2026-09-05","Ceuta 0-2 Celta Fortuna","D","","0-2"),("2026-09-11","","D","Burgos 3-1 Ceuta","3-1"),("2026-09-20","Ceuta 1-1 Valladolid","E","","1-1")],
+    "albacete": [("2026-08-16","","D","Las Palmas 2-1 Albacete","2-1"),("2026-08-22","Albacete 1-2 Real Sociedad B","D","","1-2"),("2026-08-30","Albacete 0-1 Real Oviedo","D","","0-1"),("2026-09-06","","D","Castellón 2-0 Albacete","2-0"),("2026-09-12","","E","Granada 1-1 Albacete","1-1"),("2026-09-18","Albacete 1-2 Córdoba","D","","1-2"),("2026-09-25","","D","Girona 2-0 Albacete","2-0")],
+    "ceuta": [("2026-08-15","","D","Andorra 5-1 Ceuta","5-1"),("2026-08-22","Ceuta 0-2 Las Palmas","D","","0-2"),("2026-08-30","","D","Mallorca 3-0 Ceuta","3-0"),("2026-09-05","Ceuta 0-2 Celta Fortuna","D","","0-2"),("2026-09-11","","D","Burgos 3-1 Ceuta","3-1"),("2026-09-20","Ceuta 1-1 Valladolid","E","","1-1"),("2026-09-26","Ceuta 3-1 Real Sociedad B","V","","3-1")],
 }
 
-# --- MAPEO NOMBRES ESPN -> NUESTRAS CLAVES ---
-MAPEO = {
-    "ceuta": "ceuta", "ad ceuta": "ceuta",
-    "castellon": "castellon", "cd castellon": "castellon",
-    "eibar": "eibar", "sd eibar": "eibar",
-    "mallorca": "mallorca", "real mallorca": "mallorca", "rcd mallorca": "mallorca",
-    "almeria": "almeria", "ud almeria": "almeria",
-    "burgos": "burgos", "burgos cf": "burgos",
-    "sabadell": "sabadell", "ce sabadell": "sabadell",
-    "leganes": "leganes", "cd leganes": "leganes",
-    "girona": "girona", "girona fc": "girona",
-    "sporting": "sporting-gijon", "gijon": "sporting-gijon", "sporting de gijon": "sporting-gijon",
-    "tenerife": "tenerife", "cd tenerife": "tenerife",
-    "las palmas": "las-palmas", "ud las palmas": "las-palmas",
-    "real sociedad b": "real-sociedad-b", "real sociedad de futbol b": "real-sociedad-b", "sanse": "real-sociedad-b",
-    "oviedo": "real-oviedo", "real oviedo": "real-oviedo",
-    "granada": "granada", "granada cf": "granada",
-    "celta fortuna": "celta-fortuna", "celta b": "celta-fortuna", "celta de vigo b": "celta-fortuna",
-    "cordoba": "cordoba", "cordoba cf": "cordoba",
-    "eldense": "eldense", "cd eldense": "eldense",
-    "valladolid": "valladolid", "real valladolid": "valladolid",
-    "cadiz": "cadiz", "cadiz cf": "cadiz",
-    "andorra": "andorra", "fc andorra": "andorra",
-    "albacete": "albacete", "albacete bp": "albacete",
-}
+MAPEO = {"ceuta":"ceuta","ad ceuta":"ceuta","castellon":"castellon","cd castellon":"castellon","eibar":"eibar","sd eibar":"eibar","mallorca":"mallorca","real mallorca":"mallorca","rcd mallorca":"mallorca","almeria":"almeria","ud almeria":"almeria","burgos":"burgos","burgos cf":"burgos","sabadell":"sabadell","ce sabadell":"sabadell","leganes":"leganes","cd leganes":"leganes","girona":"girona","girona fc":"girona","sporting":"sporting-gijon","gijon":"sporting-gijon","sporting de gijon":"sporting-gijon","tenerife":"tenerife","cd tenerife":"tenerife","las palmas":"las-palmas","ud las palmas":"las-palmas","real sociedad b":"real-sociedad-b","real sociedad de futbol b":"real-sociedad-b","sanse":"real-sociedad-b","real sociedad ii":"real-sociedad-b","oviedo":"real-oviedo","real oviedo":"real-oviedo","granada":"granada","granada cf":"granada","celta fortuna":"celta-fortuna","celta b":"celta-fortuna","cordoba":"cordoba","cordoba cf":"cordoba","eldense":"eldense","cd eldense":"eldense","valladolid":"valladolid","real valladolid":"valladolid","cadiz":"cadiz","cadiz cf":"cadiz","andorra":"andorra","fc andorra":"andorra","albacete":"albacete","albacete bp":"albacete"}
 
 def normaliza_nombre(s):
     s = s.lower()
     s = re.sub(r'[^a-z0-9 ]',' ',s)
-    s = s.strip()
-    return s
+    return s.strip()
 
 def clave_equipo(nombre_espn):
     n = normaliza_nombre(nombre_espn)
@@ -80,96 +54,53 @@ if historial_file.exists():
             if len(v) > len(PARTIDOS.get(k,[])): PARTIDOS[k] = [tuple(x) for x in v]
     except: pass
 
-# Parche J7 ya jugado
-if len(PARTIDOS["girona"]) == 6:
-    PARTIDOS["girona"].append(("2026-09-25","Girona 2-0 Albacete","V","","2-0"))
-    PARTIDOS["albacete"].append(("2026-09-25","","D","Girona 2-0 Albacete","2-0"))
-if len(PARTIDOS["ceuta"]) == 6:
-    PARTIDOS["ceuta"].append(("2026-09-26","Ceuta 3-1 Real Sociedad B","V","","3-1"))
-    PARTIDOS["real-sociedad-b"].append(("2026-09-26","","D","Ceuta 3-1 Real Sociedad B","3-1"))
-
-# ========= FULL AUTO TODA LA JORNADA =========
 def fetch_toda_jornada():
     nuevos = 0
+    madrid = ZoneInfo("Europe/Madrid")
+    hoy = datetime.now(madrid)
+    # Ventana J7: del 25 al 28
+    inicio = datetime(2026,9,25)
+    fin = hoy + timedelta(days=1)
+    fechas_str = f"{inicio.strftime('%Y%m%d')}-{fin.strftime('%Y%m%d')}"
+    url = f"https://site.api.espn.com/apis/site/v2/sports/soccer/esp.2/scoreboard?dates={fechas_str}"
+    print(f"Consultando ESPN esp.2: {url}")
     try:
-        # Fuente fiable Hypermotion - trae toda la J7
-        urls = [
-            "https://www.vavel.com/en-us/data/laliga2/2026/2027/results",
-            "https://www.estadiodeportivo.com/resultados-laliga-hypermotion/"
-        ]
-        headers = {"User-Agent":"Mozilla/5.0"}
-        texto_html = ""
-        for u in urls:
+        r = requests.get(url, timeout=20, headers={"User-Agent":"okhttp/4.9.0"})
+        data = r.json()
+        events = data.get("events",[])
+        print(f"Eventos recibidos: {len(events)}")
+        for ev in events:
             try:
-                r = requests.get(u, timeout=15, headers=headers)
-                if r.status_code == 200 and "Ceuta" in r.text:
-                    texto_html = r.text
-                    break
-            except: pass
-
-        if not texto_html:
-            print("No se pudo leer fuente resultados")
-            return 0
-
-        # Busca patrones tipo "Ceuta 3 1 Real Sociedad" o "Granada 2 3 Andorra"
-        import re
-        # Limpia html
-        txt = re.sub(r'<[^>]+>', ' ', texto_html)
-
-        # Patrón: Equipo + numero + numero + Equipo
-        patron = re.compile(r'([A-Za-záéíóúÁÉÍÓÚñÑ\.\- ]{3,30})\s+(\d+)\s*[-:]\s*(\d+)\s+([A-Za-záéíóúÁÉÍÓÚñÑ\.\- ]{3,30})')
-
-        for m in patron.finditer(txt):
-            home_name = m.group(1).strip()
-            hs = m.group(2).strip()
-            aws = m.group(3).strip()
-            away_name = m.group(4).strip()
-
-            clave_home = clave_equipo(home_name)
-            clave_away = clave_equipo(away_name)
-            if not clave_home or not clave_away: continue
-            if clave_home == clave_away: continue
-
-            gol = f"{hs}-{aws}"
-            # fecha aprox - usa fecha del sistema si es J7
-            fecha_real = "2026-09-26" if clave_home in ["ceuta","celta-fortuna","tenerife","granada"] or clave_away in ["ceuta","celta-fortuna","tenerife","granada"] else datetime.now(ZoneInfo("Europe/Madrid")).strftime("%Y-%m-%d")
-
-            # evita duplicados
-            ya = any(gol in x[4] and (home_name.lower() in (x[1]+x[3]).lower() or away_name.lower() in (x[1]+x[3]).lower()) for x in PARTIDOS.get(clave_home,[]))
-            if ya: continue
-            if len(PARTIDOS[clave_home]) > 0 and fecha_real in PARTIDOS[clave_home][-1][0] and gol in PARTIDOS[clave_home][-1][4]: continue
-
-            if int(hs) > int(aws): rh, ra = "V","D"
-            elif int(hs) < int(aws): rh, ra = "D","V"
-            else: rh, ra = "E","E"
-
-            texto = f"{home_name} {gol} {away_name}"
-            PARTIDOS[clave_home].append((fecha_real, texto, rh, "", gol))
-            PARTIDOS[clave_away].append((fecha_real, "", ra, texto, gol))
-            print(f"AUTO NUEVO: {texto}")
-            nuevos += 1
-
+                comp = ev["competitions"][0]
+                if not comp["status"]["type"]["completed"]: continue
+                # solo finalizados
+                c = comp["competitors"]
+                home = next(x for x in c if x["homeAway"]=="home")
+                away = next(x for x in c if x["homeAway"]=="away")
+                home_name = home["team"]["displayName"]
+                away_name = away["team"]["displayName"]
+                clave_home = clave_equipo(home_name)
+                clave_away = clave_equipo(away_name)
+                if not clave_home or not clave_away:
+                    print(f"Sin mapeo: {home_name} vs {away_name}")
+                    continue
+                gol = f"{home['score']}-{away['score']}"
+                fecha_real = comp["date"][:10]
+                # duplicado?
+                ya = any(gol==x[4] and fecha_real==x[0] for x in PARTIDOS[clave_home])
+                if ya: continue
+                hs = int(home['score']); aws = int(away['score'])
+                rh, ra = ("V","D") if hs>aws else ("D","V") if hs<aws else ("E","E")
+                texto = f"{home_name} {gol} {away_name}"
+                PARTIDOS[clave_home].append((fecha_real, texto, rh, "", gol))
+                PARTIDOS[clave_away].append((fecha_real, "", ra, texto, gol))
+                print(f"AUTO NUEVO: {texto}")
+                nuevos+=1
+            except Exception as e:
+                print(f"Error parse evento: {e}")
+                continue
     except Exception as e:
-        print(f"Fetch auto error: {e}")
-
-    # Si aún no ha cogido los 4 del sábado, mételos a la fuerza (fallback seguro)
-    #if len(PARTIDOS["ceuta"]) == 6:
-    #    PARTIDOS["ceuta"].append(("2026-09-26","Ceuta 3-1 Real Sociedad B","V","","3-1"))
-    #    PARTIDOS["real-sociedad-b"].append(("2026-09-26","","D","Ceuta 3-1 Real Sociedad B","3-1"))
-    #    nuevos+=1
-    #if len(PARTIDOS["celta-fortuna"]) == 6:
-    #    PARTIDOS["celta-fortuna"].append(("2026-09-26","Celta Fortuna 1-1 Sabadell","E","","1-1"))
-    #    PARTIDOS["sabadell"].append(("2026-09-26","","E","Celta Fortuna 1-1 Sabadell","1-1"))
-    #    nuevos+=1
-    #if len(PARTIDOS["tenerife"]) == 6:
-    #    PARTIDOS["tenerife"].append(("2026-09-26","Tenerife 1-1 Cádiz","E","","1-1"))
-    #    PARTIDOS["cadiz"].append(("2026-09-26","","E","Tenerife 1-1 Cádiz","1-1"))
-    #    nuevos+=1
-    #if len(PARTIDOS["granada"]) == 6:
-    #    PARTIDOS["granada"].append(("2026-09-26","Granada 2-3 Andorra","D","","2-3"))
-    #    PARTIDOS["andorra"].append(("2026-09-26","","V","Granada 2-3 Andorra","2-3"))
-    #    nuevos+=1
-
+        print(f"Fetch ESPN fallo: {e}")
     return nuevos
 
 print("Buscando partidos nuevos...")
@@ -194,6 +125,8 @@ def recalcular(d):
 
 TABLA = recalcular(PARTIDOS)
 historial_file.write_text(json.dumps({k:[list(x) for x in v] for k,v in PARTIDOS.items()},ensure_ascii=False,indent=2),encoding='utf-8')
+
+#... resto de generacion PDF igual que tu archivo...
 
 def normaliza(s): return s.lower().replace("-","").replace("_","").replace(" ","")
 logos_path = pathlib.Path("logos")
