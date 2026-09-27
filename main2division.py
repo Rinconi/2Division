@@ -56,58 +56,47 @@ if historial_file.exists():
 
 def fetch_toda_jornada():
     nuevos = 0
-    import requests, json
-    from datetime import datetime
-    print("Consultando allorigins J7 via proxy (bypass 403 GitHub)...")
-
-    # Tu captura es de esta jornada
-    proxied_urls = [
-        "https://api.allorigins.win/raw?url=https://api.sofascore.com/api/v1/unique-tournament/54/season/65376/events/round/7",
-        "https://api.allorigins.win/raw?url=https://api.sofascore.com/api/v1/unique-tournament/54/season/97280/events/round/7",
-    ]
-
-    for purl in proxied_urls:
-        try:
-            r = requests.get(purl, timeout=25)
-            print(f"Proxy {purl[:50]} -> {r.status_code} len {len(r.text)}")
-            if r.status_code!=200: continue
-            data = r.json()
-            # allorigins a veces devuelve el json dentro de contents
-            if "events" not in data and "contents" in data:
-                data = json.loads(data["contents"])
-            events = data.get("events", [])
-            if len(events) < 3: continue
-            print(f" -> eventos: {len(events)}")
-
-            for ev in events:
-                if ev.get("status",{}).get("type")!="finished": continue
-                hs = ev["homeScore"]["current"]
-                aws = ev["awayScore"]["current"]
-                if hs is None: continue
-                gol = f"{hs}-{aws}"
-                fecha_real = datetime.fromtimestamp(ev["startTimestamp"]).strftime("%Y-%m-%d")
-                t1 = ev["homeTeam"]["name"]
-                t2 = ev["awayTeam"]["name"]
-                clave_home = clave_equipo(t1)
-                clave_away = clave_equipo(t2)
+    try:
+        import requests
+        from bs4 import BeautifulSoup
+        from datetime import datetime
+        print("Consultando LaLiga oficial J7 (fuente que no bloquea GitHub)...")
+        headers = {"User-Agent": "Mozilla/5.0"}
+        # Esta página sí responde 200 desde Actions
+        url = "https://www.resultados-futbol.com/laliga2/grupo1/jornada7"
+        r = requests.get(url, headers=headers, timeout=20)
+        print(f"resultados-futbol -> {r.status_code} len {len(r.text)}")
+        soup = BeautifulSoup(r.text, "lxml")
+        # cada partido viene como: Girona 2-0 Albacete
+        for row in soup.select("tr.vevent, tr.b1, tr.b2"):
+            try:
+                local = row.select_one("td.equipo1").get_text(strip=True)
+                visita = row.select_one("td.equipo2").get_text(strip=True)
+                res = row.select_one("td.rstd").get_text(strip=True) # 2-0
+                if "-" not in res: continue
+                gol = res.replace(" ","")
+                fecha_real = "2026-09-27" # la jornada actual
+                clave_home = clave_equipo(local)
+                clave_away = clave_equipo(visita)
                 if not clave_home or not clave_away: continue
-                ya = any(fecha_real==x[0] and gol==x[4] for x in PARTIDOS.get(clave_home,[]))
+                ya = any(gol==x[4] and local in x[1] for x in PARTIDOS.get(clave_home,[]))
                 if ya: continue
+                hs,aws = map(int, gol.split("-"))
                 rh = "V" if hs>aws else "D" if hs<aws else "E"
                 ra = "D" if rh=="V" else "V" if rh=="D" else "E"
-                texto = f"{t1} {gol} {t2}"
+                texto = f"{local} {gol} {visita}"
                 PARTIDOS[clave_home].append((fecha_real, texto, rh, "", gol))
                 PARTIDOS[clave_away].append((fecha_real, "", ra, texto, gol))
-                print(f"AUTO NUEVO SOFASCORE: {texto}")
+                print(f"AUTO NUEVO LaLiga: {texto}")
                 nuevos+=1
-            if nuevos>0:
-                return nuevos
-        except Exception as e:
-            print(f"Error proxy: {e}")
-            continue
+            except:
+                continue
+    except Exception as e:
+        print(f"Error LaLiga: {e}")
 
-    print(f"Nuevos detectados via SofaScore: {nuevos}")
+    print(f"Nuevos detectados: {nuevos}")
     return nuevos
+
 
 
 print("Buscando partidos nuevos...")
