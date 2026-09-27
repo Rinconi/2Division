@@ -56,79 +56,78 @@ if historial_file.exists():
 
 def fetch_toda_jornada():
     nuevos = 0
-    import os, requests
-    from datetime import datetime
+    import requests
 
-    API_FOOTBALL_KEY = os.getenv("API_FOOTBALL_KEY", "").strip()
-    FOOTBALL_DATA_KEY = os.getenv("FOOTBALL_DATA_KEY", "").strip()
+    print("Consultando SofaScore LaLiga2 (sin token)...")
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0",
+            "Accept": "application/json"
+        }
+        # 1. Busca el ID de la temporada 26/27 para LaLiga2 (tournament 54)
+        r = requests.get("https://api.sofascore.com/api/v1/unique-tournament/54/seasons", headers=headers, timeout=20)
+        seasons = r.json().get("seasons", [])
+        season_id = None
+        for s in seasons:
+            if "26/27" in s.get("name","") or s.get("year")=="26/27" or s.get("year")=="2026/27":
+                season_id = s["id"]
+                break
+        # si no encuentra 26/27, coge la última (es la actual)
+        if not season_id and seasons:
+            season_id = seasons[0]["id"]
+        print(f"SofaScore season_id: {season_id}")
 
-    print(f"Token API-Football: {'OK' if API_FOOTBALL_KEY else 'NO'} | Football-Data: {'OK' if FOOTBALL_DATA_KEY else 'NO'}")
+        if not season_id:
+            return 0
 
-    # ---- 1) API-FOOTBALL (LaLiga2 = league 141) ----
-    if API_FOOTBALL_KEY:
-        try:
-            print("Consultando API-Football league 141 - J7...")
-            url = "https://v3.football.api-sports.io/fixtures"
-            headers = {"x-apisports-key": API_FOOTBALL_KEY}
-            params = {"league": 141, "season": 2026, "round": "Regular Season - 7"}
-            r = requests.get(url, headers=headers, params=params, timeout=20)
-            data = r.json()
-            print(f"API-Football response: {r.status_code} - {len(data.get('response',[]))} fixtures")
-            for fx in data.get("response", []):
-                if fx["fixture"]["status"]["short"] not in ["FT","AET","PEN"]:
-                    continue
-                t1 = fx["teams"]["home"]["name"]
-                t2 = fx["teams"]["away"]["name"]
-                hs = fx["goals"]["home"]; aws = fx["goals"]["away"]
-                if hs is None or aws is None: continue
-                gol = f"{hs}-{aws}"
-                fecha_real = fx["fixture"]["date"][:10]
-                clave_home = clave_equipo(t1)
-                clave_away = clave_equipo(t2)
-                if not clave_home or not clave_away:
-                    print(f"Sin mapeo: {t1} vs {t2}")
-                    continue
-                ya = any(fecha_real==x[0] and gol==x[4] for x in PARTIDOS.get(clave_home,[]))
-                if ya: continue
-                rh = "V" if hs>aws else "D" if hs<aws else "E"
-                ra = "D" if rh=="V" else "V" if rh=="D" else "E"
-                texto = f"{t1} {gol} {t2}"
-                PARTIDOS[clave_home].append((fecha_real, texto, rh, "", gol))
-                PARTIDOS[clave_away].append((fecha_real, "", ra, texto, gol))
-                print(f"AUTO NUEVO API-FOOTBALL: {texto}")
-                nuevos+=1
-        except Exception as e:
-            print(f"Error API-Football: {e}")
+        # 2. Trae la J7 - round 7
+        url = f"https://api.sofascore.com/api/v1/unique-tournament/54/season/{season_id}/events/round/7"
+        r = requests.get(url, headers=headers, timeout=20)
+        data = r.json()
+        events = data.get("events", [])
+        print(f"SofaScore eventos J7: {len(events)}")
 
-    # ---- 2) FOOTBALL-DATA.ORG fallback (competition SD) ----
-    if nuevos==0 and FOOTBALL_DATA_KEY:
-        try:
-            print("Consultando Football-Data.org SD J7...")
-            url = "https://api.football-data.org/v4/competitions/SD/matches?season=2026&matchday=7"
-            headers = {"X-Auth-Token": FOOTBALL_DATA_KEY}
-            r = requests.get(url, headers=headers, timeout=20)
-            data = r.json()
-            print(f"FD response: {r.status_code} - {len(data.get('matches',[]))} matches")
-            for m in data.get("matches",[]):
-                if m["status"]!="FINISHED": continue
-                t1 = m["homeTeam"]["name"]; t2 = m["awayTeam"]["name"]
-                hs = m["score"]["fullTime"]["home"]; aws = m["score"]["fullTime"]["away"]
-                if hs is None: continue
-                gol = f"{hs}-{aws}"
-                fecha_real = m["utcDate"][:10]
-                clave_home = clave_equipo(t1); clave_away = clave_equipo(t2)
-                if not clave_home or not clave_away: continue
-                ya = any(fecha_real==x[0] and gol==x[4] for x in PARTIDOS.get(clave_home,[]))
-                if ya: continue
-                rh = "V" if hs>aws else "D" if hs<aws else "E"
-                ra = "D" if rh=="V" else "V" if rh=="D" else "E"
-                texto = f"{t1} {gol} {t2}"
-                PARTIDOS[clave_home].append((fecha_real, texto, rh, "", gol))
-                PARTIDOS[clave_away].append((fecha_real, "", ra, texto, gol))
-                print(f"AUTO NUEVO FD: {texto}")
-                nuevos+=1
-        except Exception as e:
-            print(f"Error FD: {e}")
+        # Si round no funciona, trae por fecha directa 25-28 sept
+        if len(events)==0:
+            url = f"https://api.sofascore.com/api/v1/unique-tournament/54/season/{season_id}/events/last/0"
+            # y también prueba scheduled-events de esos días
+            r = requests.get(f"https://api.sofascore.com/api/v1/sport/football/scheduled-events/2026-09-26", headers=headers, timeout=20)
+            events = [e for e in r.json().get("events",[]) if e.get("tournament",{}).get("uniqueTournament",{}).get("id")==54]
+            print(f"SofaScore por fecha 26/09: {len(events)}")
+            r2 = requests.get(f"https://api.sofascore.com/api/v1/sport/football/scheduled-events/2026-09-25", headers=headers, timeout=20)
+            events += [e for e in r2.json().get("events",[]) if e.get("tournament",{}).get("uniqueTournament",{}).get("id")==54]
+
+        for ev in events:
+            if ev.get("status",{}).get("type")!= "finished":
+                continue
+            t1 = ev["homeTeam"]["name"]
+            t2 = ev["awayTeam"]["name"]
+            hs = ev["homeScore"]["current"]
+            aws = ev["awayScore"]["current"]
+            gol = f"{hs}-{aws}"
+            fecha_real = ev["startTimestamp"]
+            from datetime import datetime
+            fecha_real = datetime.fromtimestamp(fecha_real).strftime("%Y-%m-%d")
+
+            clave_home = clave_equipo(t1)
+            clave_away = clave_equipo(t2)
+            if not clave_home or not clave_away:
+                continue
+
+            ya = any(fecha_real==x[0] and gol==x[4] for x in PARTIDOS.get(clave_home,[]))
+            if ya: continue
+
+            rh = "V" if hs>aws else "D" if hs<aws else "E"
+            ra = "D" if rh=="V" else "V" if rh=="D" else "E"
+            texto = f"{t1} {gol} {t2}"
+            PARTIDOS[clave_home].append((fecha_real, texto, rh, "", gol))
+            PARTIDOS[clave_away].append((fecha_real, "", ra, texto, gol))
+            print(f"AUTO NUEVO SOFASCORE: {texto}")
+            nuevos+=1
+
+    except Exception as e:
+        print(f"Error SofaScore: {e}")
+        import traceback; traceback.print_exc()
 
     return nuevos
 
