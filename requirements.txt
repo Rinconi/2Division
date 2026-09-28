@@ -1,6 +1,7 @@
 cloudscraper
 fpdf2
 requests
+icalendar
 cairosvg
 beautifulsoup4
 lxml
