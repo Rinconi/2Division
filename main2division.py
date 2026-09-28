@@ -305,7 +305,8 @@ def fetch_toda_jornada(debug=False):
             ra = "D" if rh=="V" else "V" if rh=="D" else "E"
             texto = f"{home} {gol} {away}"
 
-    PARTIDOS[clave_away].append((fecha_real, "", ra, texto, gol))
+    #PARTIDOS[clave_away].append((fecha_real, "", ra, texto, gol))
+    PARTIDOS[clave_home].append((fecha_real, texto, rh, "", gol))
     log_mensaje(f"  ✅ Agregado: {texto} ({fecha_real})")
     nuevos += 1
         except Exception as e:
