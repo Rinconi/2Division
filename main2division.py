@@ -1,5 +1,5 @@
 import pathlib, json, requests, re
-from datetime import datetime, timedelta
+from datetime import datetime
 from zoneinfo import ZoneInfo
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
@@ -69,37 +69,18 @@ def cargar_partidos():
         try:
             with open(historial_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                # Convertir listas a tuplas
                 PARTIDOS = {k: [tuple(x) for x in v] for k, v in data.items()}
             log_mensaje(f"✅ Cargados partidos desde {historial_file.name}")
             return PARTIDOS
         except Exception as e:
             log_mensaje(f"❌ Error cargando JSON: {e}")
     
-    # Si no existe o falla, crear estructura con todos los equipos
     PARTIDOS = {
-        "castellon": [],
-        "eibar": [],
-        "mallorca": [],
-        "almeria": [],
-        "burgos": [],
-        "sabadell": [],
-        "leganes": [],
-        "girona": [],
-        "sporting-gijon": [],
-        "tenerife": [],
-        "las-palmas": [],
-        "real-sociedad-b": [],
-        "real-oviedo": [],
-        "granada": [],
-        "celta-fortuna": [],
-        "cordoba": [],
-        "eldense": [],
-        "valladolid": [],
-        "cadiz": [],
-        "andorra": [],
-        "albacete": [],
-        "ceuta": [],
+        "castellon": [], "eibar": [], "mallorca": [], "almeria": [], "burgos": [],
+        "sabadell": [], "leganes": [], "girona": [], "sporting-gijon": [], "tenerife": [],
+        "las-palmas": [], "real-sociedad-b": [], "real-oviedo": [], "granada": [],
+        "celta-fortuna": [], "cordoba": [], "eldense": [], "valladolid": [], "cadiz": [],
+        "andorra": [], "albacete": [], "ceuta": [],
     }
     log_mensaje("⚠️  Estructura PARTIDOS vacía (JSON no encontrado)")
     return PARTIDOS
@@ -115,36 +96,23 @@ def extrae_resultado(ev):
     hs = None
     aws = None
     
-    # 1) Intenta: homeScore.current / awayScore.current
     if isinstance(ev.get("homeScore"), dict):
         hs = ev.get("homeScore", {}).get("current")
-    
     if isinstance(ev.get("awayScore"), dict):
         aws = ev.get("awayScore", {}).get("current")
     
-    # 2) Intenta: homeScore directo (número)
-    if hs is None:
-        hs = ev.get("homeScore")
-    if aws is None:
-        aws = ev.get("awayScore")
+    if hs is None: hs = ev.get("homeScore")
+    if aws is None: aws = ev.get("awayScore")
     
-    # 3) Intenta: score.home / score.away
-    if hs is None:
-        hs = ev.get("score", {}).get("home")
-    if aws is None:
-        aws = ev.get("score", {}).get("away")
+    if hs is None: hs = ev.get("score", {}).get("home")
+    if aws is None: aws = ev.get("score", {}).get("away")
     
-    # 4) Convierte a int si es string
     if isinstance(hs, str):
-        try:
-            hs = int(hs)
-        except:
-            hs = None
+        try: hs = int(hs)
+        except: hs = None
     if isinstance(aws, str):
-        try:
-            aws = int(aws)
-        except:
-            aws = None
+        try: aws = int(aws)
+        except: aws = None
     
     return hs, aws
 
@@ -154,16 +122,13 @@ def extrae_fecha(ev):
     
     if ts:
         try:
-            # Si es string, convertir a int
             ts_int = int(ts) if isinstance(ts, str) else ts
-            # Convertir desde UTC a Madrid
             fecha_real = datetime.fromtimestamp(ts_int, tz=ZoneInfo("UTC"))\
                 .astimezone(ZoneInfo("Europe/Madrid")).strftime("%Y-%m-%d")
             return fecha_real
         except:
             pass
     
-    # Fallback a campo date
     fecha_raw = ev.get("date", "2026-09-27")
     if fecha_raw:
         return fecha_raw[:10]
@@ -172,16 +137,15 @@ def extrae_fecha(ev):
 
 def partido_existe(clave_home, clave_away, fecha, marcador):
     """Verifica si un partido ya existe en el historial de forma robusta"""
-    # Busca en ambos equipos
     for equipo in [clave_home, clave_away]:
         for partido_local in PARTIDOS.get(equipo, []):
-            fecha_local = partido_local[0]
-            gol = partido_local[4]
-            
-            # Verifica: misma fecha + mismo marcador
-            if fecha_local == fecha and gol == marcador:
-                return True
-    
+            try:
+                fecha_local = partido_local[0]
+                gol = partido_local[4]
+                if fecha_local == fecha and gol == marcador:
+                    return True
+            except:
+                pass
     return False
 
 def fetch_toda_jornada(debug=False):
@@ -189,7 +153,6 @@ def fetch_toda_jornada(debug=False):
     global PARTIDOS
     nuevos = 0
     
-    # Contadores detallados para el diagnóstico
     contadores = {
         "sin_equipos": 0,
         "sin_marcador": 0,
@@ -232,7 +195,6 @@ def fetch_toda_jornada(debug=False):
         except Exception as e:
             log_mensaje(f" ✗ Error en endpoint {url}: {e}")
 
-    # Deduplicar por ID de evento
     vistos = set()
     unicos = []
     for ev in eventos:
@@ -242,44 +204,39 @@ def fetch_toda_jornada(debug=False):
         vistos.add(eid)
         unicos.append(ev)
 
-    log_mensaje(f"📊 Eventos únicos recuperados: {len(unicos)}\n")
+    log_mensaje(f"📊 Eventos únicos recuperados: {len(unicos)}
+")
 
     for ev in unicos:
         try:
-            # 1. DEBUG: Mostrar los primeros 3 JSON completos sin recortar
             if debug and debug_count < 3:
                 log_mensaje(f"\n🔍 [DEBUG] ESTRUCTURA COMPLETA DEL EVENTO {debug_count}:")
                 log_mensaje(json.dumps(ev, indent=2))
                 log_mensaje("="*50)
                 debug_count += 1
             
-            # Extrae nombres de equipos
             home = ev.get("homeTeam",{}).get("name") or ev.get("home",{}).get("name") or ev.get("homeTeam")
             away = ev.get("awayTeam",{}).get("name") or ev.get("away",{}).get("name") or ev.get("awayTeam")
             
             if isinstance(home, dict): home = home.get("name")
             if isinstance(away, dict): away = away.get("name")
             
-            # Validación de presencia de equipos
             if not home or not away:
                 contadores["sin_equipos"] += 1
                 if debug:
                     log_mensaje(f"  ⚠️  Descartado: Datos de equipos ausentes (home: {home}, away: {away})")
                 continue
 
-            # Extrae resultado
             hs, aws = extrae_resultado(ev)
             if hs is None or aws is None:
                 contadores["sin_marcador"] += 1
                 if debug:
-                    log_mensaje(f"  ⚠️  Descartado (Sin Marcador/No Jugado): {home} vs {away} [hs={hs}, aws={aws}]")
+                    log_mensaje(f"  ⚠️  Descartado (Sin Marcador): {home} vs {away} [hs={hs}, aws={aws}]")
                 continue
 
-            # Extrae fecha y formatea goles
             fecha_real = extrae_fecha(ev)
             gol = f"{int(hs)}-{int(aws)}"
 
-            # Mapea equipos
             clave_home = clave_equipo(home)
             clave_away = clave_equipo(away)
             
@@ -295,6 +252,7 @@ def fetch_toda_jornada(debug=False):
                 if debug:
                     log_mensaje(f"  ❌ Descartado (Error Mapeo): '{home}' ({clave_home}) vs '{away}' ({clave_away})")
                 continue
+
             if partido_existe(clave_home, clave_away, fecha_real, gol):
                 contadores["ya_existe"] += 1
                 if debug:
@@ -304,17 +262,20 @@ def fetch_toda_jornada(debug=False):
             rh = "V" if int(hs)>int(aws) else "D" if int(hs)<int(aws) else "E"
             ra = "D" if rh=="V" else "V" if rh=="D" else "E"
             texto = f"{home} {gol} {away}"
-
-    #PARTIDOS[clave_away].append((fecha_real, "", ra, texto, gol))
-    PARTIDOS[clave_home].append((fecha_real, texto, rh, "", gol))
-    log_mensaje(f"  ✅ Agregado: {texto} ({fecha_real})")
-    nuevos += 1
+            
+            PARTIDOS[clave_home].append((fecha_real, texto, rh, "", gol))
+            PARTIDOS[clave_away].append((fecha_real, "", ra, texto, gol))
+            
+            log_mensaje(f"  ✅ Agregado: {texto} ({fecha_real})")
+            nuevos += 1
+            
         except Exception as e:
-        contadores["con_error"] += 1
-    log_mensaje(f"  💥 ERROR CRÍTICO procesando evento: {e}")
-        import traceback
-    log_mensaje(traceback.format_exc())
-    continue
+            contadores["con_error"] += 1
+            log_mensaje(f"  💥 ERROR CRÍTICO procesando evento: {e}")
+            import traceback
+            log_mensaje(traceback.format_exc())
+            continue
+
     log_mensaje("\n" + "="*50)
     log_mensaje("📊 AUDITORÍA DE EVENTOS DESCARTADOS Y FILTRADOS")
     log_mensaje("="*50)
@@ -328,10 +289,8 @@ def fetch_toda_jornada(debug=False):
     log_mensaje(f"  💥 Errores ocultos (Excepciones):  {contadores['con_error']}")
     log_mensaje("="*50)
     
-    
-    
     if no_mapeados:
-        log_mensaje(f"\n⚠️  Equipos no mapeados ({len(set(no_mapeados))}):")
+        log_mensaje(f"\n⚠️  Listado de cadenas de texto no mapeadas ({len(set(no_mapeados))}):")
         for eq in sorted(set(no_mapeados)):
             log_mensaje(f"   - {eq}")
     
@@ -341,37 +300,22 @@ def recalcular(d):
     """Recalcula la tabla de clasificación"""
     t = []
     for eq, lista in d.items():
-        if not lista: 
-            continue
-        
+        if not lista: continue
         pj = len(lista)
         g = sum(1 for _, _, r, _, _ in lista if r == 'V')
         e = sum(1 for _, _, r, _, _ in lista if r == 'E')
         p = sum(1 for _, _, r, _, _ in lista if r == 'D')
-        
-        gf = 0  # Goles a favor
-        gc = 0  # Goles en contra
-        
+        gf = gc = 0
         for fecha, en_casa, resultado, fuera, gol in lista:
             if "-" in gol:
                 try:
                     gol_local, gol_visitante = map(int, gol.split("-"))
-                    
-                    # Si en_casa tiene contenido, este equipo juega en casa
-                    es_local = (en_casa != "")
-                    
-                    if es_local:
-                        gf += gol_local
-                        gc += gol_visitante
+                    if en_casa != "":
+                        gf += gol_local; gc += gol_visitante
                     else:
-                        gf += gol_visitante
-                        gc += gol_local
-                except:
-                    pass
-        
+                        gf += gol_visitante; gc += gol_local
+                except: pass
         t.append((eq, pj, g*3 + e, g, e, p, gf, gc))
-    
-    # Ordenar por: puntos DESC, diferencia goles DESC, goles a favor DESC
     t.sort(key=lambda x: (x[2], x[6]-x[7], x[6]), reverse=True)
     return t
 
@@ -392,17 +336,12 @@ def mostrar_clasificacion(tabla):
 def get_logo(eq):
     """Obtiene el logo de un equipo si existe"""
     logos_path = pathlib.Path("logos")
-    if not logos_path.exists():
-        return None
-    
-    def normaliza(s): 
-        return s.lower().replace("-","").replace("_","").replace(" ","")
-    
+    if not logos_path.exists(): return None
+    def normaliza(s): return s.lower().replace("-","").replace("_","").replace(" ","")
     logos = {normaliza(p.stem): p for p in logos_path.glob("*.png")}
     k = normaliza(eq)
     for lk, path in logos.items():
-        if k in lk or lk in k: 
-            return str(path)
+        if k in lk or lk in k: return str(path)
     return None
 
 def generar_pdf():
@@ -416,20 +355,14 @@ def generar_pdf():
     story = []
     
     TABLA = recalcular(PARTIDOS)
-    
-    # Portada
     story.append(Paragraph(f"<b>LaLiga Hypermotion - {hora_str}</b>", styles['Title']))
     style_sub = styles['Normal'].clone('subtitulo')
-    style_sub.alignment = TA_CENTER
-    style_sub.fontSize = 13
-    style_sub.spaceAfter = 10
-    style_sub.fontName = 'Helvetica-Bold'
+    style_sub.alignment = TA_CENTER; style_sub.fontSize = 13; style_sub.spaceAfter = 10; style_sub.fontName = 'Helvetica-Bold'
     
     J = max(len(v) for v in PARTIDOS.values()) if PARTIDOS.values() else 0
     story.append(Paragraph(f"Clasificacion EN VIVO - Jornada {J}", style_sub))
     story.append(Spacer(1,12))
     
-    # Tabla de clasificación
     data = [["#","","Equipo","PJ","PTS","G","E","P","GF","GC","DG"]]
     for i,(eq,pj,pts,g,e,p,gf,gc) in enumerate(TABLA,1):
         dg = gf-gc
@@ -448,46 +381,33 @@ def generar_pdf():
         ('FONTSIZE',(0,0),(-1,-1),9)
     ])
     
-    # Colores por posición
     for r in range(1,len(data)):
-        if r<=2: 
-            bg = colors.HexColor("#D4EDDA")  # Verde - Playoff
-        elif r<=6: 
-            bg = colors.HexColor("#FFF3CD")  # Amarillo - Otros
-        elif r>=19: 
-            bg = colors.HexColor("#F8D7DA")  # Rojo - Descenso
-        elif r%2==0: 
-            bg = colors.HexColor("#FFFFFF")
-        else: 
-            bg = colors.HexColor("#F8F9FA")
+        if r<=2: bg = colors.HexColor("#D4EDDA")
+        elif r<=6: bg = colors.HexColor("#FFF3CD")
+        elif r>=19: bg = colors.HexColor("#F8D7DA")
+        elif r%2==0: bg = colors.HexColor("#FFFFFF")
+        else: bg = colors.HexColor("#F8F9FA")
         st.add('BACKGROUND',(0,r),(-1,r),bg)
     
     table.setStyle(st)
     story.append(table)
     story.append(PageBreak())
     
-    # Fichas de equipos
     for idx,(eq,pj,pts,g,e,p,gf,gc) in enumerate(TABLA,1):
-        # Estadísticas en casa/fuera
         casa_v=casa_e=casa_d=fuera_v=fuera_e=fuera_d=0
         for f,c,r,fu,gol in PARTIDOS[eq]:
-            if c!="":  # En casa
+            if c!="":
                 if r=='V': casa_v+=1
                 elif r=='E': casa_e+=1
                 else: casa_d+=1
-            else:  # Fuera
+            else:
                 if r=='V': fuera_v+=1
                 elif r=='E': fuera_e+=1
                 else: fuera_d+=1
         
-        # Encabezado del equipo
         lp = get_logo(eq)
-        style_team_big = styles['Normal'].clone(f'team_big_{idx}')
-        style_team_big.fontSize = 20
-        style_team_big.fontName = 'Helvetica-Bold'
-        style_pj_big = styles['Normal'].clone(f'pj_big_{idx}')
-        style_pj_big.fontSize = 12
-        style_pj_big.fontName = 'Helvetica-Bold'
+        style_team_big = styles['Normal'].clone(f'team_big_{idx}'); style_team_big.fontSize = 20; style_team_big.fontName = 'Helvetica-Bold'
+        style_pj_big = styles['Normal'].clone(f'pj_big_{idx}'); style_pj_big.fontSize = 12; style_pj_big.fontName = 'Helvetica-Bold'
         
         if lp and pathlib.Path(lp).exists():
             logo_img = Image(lp, width=60, height=60)
@@ -498,47 +418,31 @@ def generar_pdf():
             header_data = [[Paragraph(f"<b>{eq.replace('-',' ').title()} - Pos {idx} | {pts} pts</b>",style_team_big)],[Paragraph(f"PJ:{pj} G:{g} E:{e} P:{p} GF:{gf} GC:{gc} DG:{gf-gc}",style_pj_big)]]
             ht = Table(header_data, colWidths=[470])
         
-        story.append(ht)
-        story.append(Spacer(1,10))
-        
-        # Estadísticas en casa/fuera
+        story.append(ht); story.append(Spacer(1,10))
         cajas_data = [[Paragraph(f"<b>EN CASA:</b> {casa_v}V - {casa_e}E - {casa_d}D",styles['Normal']),Paragraph(f"<b>FUERA:</b> {fuera_v}V - {fuera_e}E - {fuera_d}D",styles['Normal'])]]
         cajas = Table(cajas_data, colWidths=[150,150])
         cajas.setStyle(TableStyle([('BACKGROUND',(0,0),(0,0),colors.HexColor("#E8F5E9")),('BACKGROUND',(1,0),(1,0),colors.HexColor("#FFEBEE")),('BOX',(0,0),(-1,-1),0.5,colors.black)]))
-        story.append(cajas)
-        story.append(Spacer(1,12))
+        story.append(cajas); story.append(Spacer(1,12))
         
-        # Historial de partidos
-        center_style = styles['Normal'].clone(f'centered_{idx}')
-        center_style.alignment = TA_CENTER
-        story.append(Paragraph(f"<b>Partidos J1-{J}</b>",center_style))
-        story.append(Spacer(1,6))
+        center_style = styles['Normal'].clone(f'centered_{idx}'); center_style.alignment = TA_CENTER
+        story.append(Paragraph(f"<b>Partidos J1-{J}</b>",center_style)); story.append(Spacer(1,6))
         
         pd = [["Fecha","EN CASA","R","FUERA","GOL"]]
-        for row in PARTIDOS[eq]:
-            pd.append(list(row))
+        for row in PARTIDOS[eq]: pd.append(list(row))
         
         pt = Table(pd, colWidths=[70,170,25,170,40])
         ps = TableStyle([
-            ('BACKGROUND',(0,0),(-1,0),colors.black),
-            ('TEXTCOLOR',(0,0),(-1,0),colors.white),
-            ('ALIGN',(0,0),(-1,-1),'CENTER'),
-            ('FONTNAME',(0,0),(-1,0),'Helvetica-Bold'),
-            ('FONTSIZE',(0,0),(-1,-1),8)
+            ('BACKGROUND',(0,0),(-1,0),colors.black), ('TEXTCOLOR',(0,0),(-1,0),colors.white),
+            ('ALIGN',(0,0),(-1,-1),'CENTER'), ('FONTNAME',(0,0),(-1,0),'Helvetica-Bold'), ('FONTSIZE',(0,0),(-1,-1),8)
         ])
         
         for ri in range(1,len(pd)):
             res = pd[ri][2]
-            if res=='V': 
-                ps.add('BACKGROUND',(2,ri),(2,ri),colors.HexColor("#b6f5b6"))
-            elif res=='D': 
-                ps.add('BACKGROUND',(2,ri),(2,ri),colors.HexColor("#ffb3b3"))
-            elif res=='E': 
-                ps.add('BACKGROUND',(2,ri),(2,ri),colors.HexColor("#fff2b2"))
+            if res=='V': ps.add('BACKGROUND',(2,ri),(2,ri),colors.HexColor("#b6f5b6"))
+            elif res=='D': ps.add('BACKGROUND',(2,ri),(2,ri),colors.HexColor("#ffb3b3"))
+            elif res=='E': ps.add('BACKGROUND',(2,ri),(2,ri),colors.HexColor("#fff2b2"))
         
-        pt.setStyle(ps)
-        story.append(pt)
-        story.append(PageBreak())
+        pt.setStyle(ps); story.append(pt); story.append(PageBreak())
     
     doc.build(story)
     log_mensaje(f"✅ PDF generado: {pdf_file}")
@@ -549,26 +453,21 @@ if __name__ == "__main__":
     log_mensaje("🏆 LALIGA HYPERMOTION - ACTUALIZAR CLASIFICACIÓN")
     log_mensaje("=" * 70)
     
-    # 1. Cargar datos del JSON
     PARTIDOS = cargar_partidos()
     
-    # 2. Buscar partidos nuevos (CON DEBUG ACTIVADO PARA VER ESTRUCTURA DE EVENTOS)
     nuevos = fetch_toda_jornada(debug=True)
     
-    # 3. Guardar cambios
     if nuevos > 0:
         guardar_partidos()
         log_mensaje(f"\n✅ {nuevos} partidos nuevos añadidos")
     else:
         log_mensaje("\n✓ Sin cambios en los datos")
     
-    # 4. Mostrar clasificación
     TABLA = recalcular(PARTIDOS)
     J = max(len(v) for v in PARTIDOS.values()) if PARTIDOS.values() else 0
     log_mensaje(f"\n📊 Jornadas jugadas: {J}")
     mostrar_clasificacion(TABLA)
     
-    # 5. Generar PDF con datos completos
     log_mensaje("\n📄 Generando informe PDF...")
     generar_pdf()
     
