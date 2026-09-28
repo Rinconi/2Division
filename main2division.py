@@ -184,12 +184,14 @@ def partido_existe(clave_home, clave_away, fecha, marcador):
     
     return False
 
-def fetch_toda_jornada():
+def fetch_toda_jornada(debug=False):
     """Obtiene partidos nuevos de la API"""
     global PARTIDOS
     nuevos = 0
     no_mapeados = []
     sin_marcador = 0
+    sin_equipos = 0
+    debug_count = 0
     
     log_mensaje("\n🔄 Buscando partidos nuevos en la API...")
     log_mensaje("Consultando LivescoreFootball (worldcup26.ir)...")
@@ -237,6 +239,11 @@ def fetch_toda_jornada():
 
     for ev in unicos:
         try:
+            # DEBUG: mostrar primeros eventos
+            if debug and debug_count < 3:
+                log_mensaje(f"\n🔍 DEBUG Evento {debug_count}: {json.dumps(ev, indent=2)[:500]}...")
+                debug_count += 1
+            
             # Extrae nombres de equipos
             home = ev.get("homeTeam",{}).get("name") or ev.get("home",{}).get("name") or ev.get("homeTeam")
             away = ev.get("awayTeam",{}).get("name") or ev.get("away",{}).get("name") or ev.get("awayTeam")
@@ -247,6 +254,7 @@ def fetch_toda_jornada():
                 away = away.get("name")
             
             if not home or not away:
+                sin_equipos += 1
                 continue
 
             # Extrae resultado con robustez
@@ -254,6 +262,7 @@ def fetch_toda_jornada():
             
             if hs is None or aws is None:
                 sin_marcador += 1
+                log_mensaje(f"  ⚠️  Sin marcador: {home} vs {away} (hs={hs}, aws={aws})")
                 continue
 
             # Extrae fecha con zona horaria
@@ -266,6 +275,7 @@ def fetch_toda_jornada():
             
             if not clave_home or not clave_away:
                 no_mapeados.append(f"{home} vs {away}")
+                log_mensaje(f"  ❌ No mapeado: {home} ({clave_home}) vs {away} ({clave_away})")
                 continue
 
             # Verifica si ya existe
@@ -286,10 +296,13 @@ def fetch_toda_jornada():
             
         except Exception as e:
             log_mensaje(f"  ❌ Error procesando evento: {e}")
+            import traceback
+            log_mensaje(f"     {traceback.format_exc()}")
             continue
 
     log_mensaje(f"\n📊 Nuevos partidos detectados: {nuevos}")
     log_mensaje(f"⚠️  Partidos sin marcador (aún no jugados): {sin_marcador}")
+    log_mensaje(f"⚠️  Eventos sin equipos identificables: {sin_equipos}")
     
     if no_mapeados:
         log_mensaje(f"\n⚠️  Equipos no mapeados ({len(set(no_mapeados))}):")
@@ -513,8 +526,8 @@ if __name__ == "__main__":
     # 1. Cargar datos del JSON
     PARTIDOS = cargar_partidos()
     
-    # 2. Buscar partidos nuevos
-    nuevos = fetch_toda_jornada()
+    # 2. Buscar partidos nuevos (CON DEBUG ACTIVADO PARA VER ESTRUCTURA DE EVENTOS)
+    nuevos = fetch_toda_jornada(debug=True)
     
     # 3. Guardar cambios
     if nuevos > 0:
