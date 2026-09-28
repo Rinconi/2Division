@@ -185,21 +185,28 @@ def partido_existe(clave_home, clave_away, fecha, marcador):
     return False
 
 def fetch_toda_jornada(debug=False):
-    """Obtiene partidos nuevos de la API"""
+    """Obtiene partidos nuevos de la API con trazas DEBUG avanzadas"""
     global PARTIDOS
     nuevos = 0
+    
+    # Contadores detallados para el diagnóstico
+    contadores = {
+        "sin_equipos": 0,
+        "sin_marcador": 0,
+        "no_mapeado_home": 0,
+        "no_mapeado_away": 0,
+        "no_mapeado_ambos": 0,
+        "ya_existe": 0,
+        "con_error": 0
+    }
+    
     no_mapeados = []
-    sin_marcador = 0
-    sin_equipos = 0
     debug_count = 0
     
     log_mensaje("\n🔄 Buscando partidos nuevos en la API...")
-    log_mensaje("Consultando LivescoreFootball (worldcup26.ir)...")
-
     BASE = "https://worldcup26.ir"
     headers = {"User-Agent": "Mozilla/5.0"}
 
-    # ENDPOINTS MEJORADOS: rango amplio desde septiembre hasta fin de temporada
     endpoints = [
         f"{BASE}/get/soccer/esp.2/fixtures?status=all&from=20260901&to=20261231&limit=500",
         f"{BASE}/get/soccer/esp.2/scoreboard?dates=20260926",
@@ -223,7 +230,7 @@ def fetch_toda_jornada(debug=False):
             if isinstance(batch, list) and len(batch) > 0:
                 eventos.extend(batch)
         except Exception as e:
-            log_mensaje(f" ✗ Error: {e}")
+            log_mensaje(f" ✗ Error en endpoint {url}: {e}")
 
     # Deduplicar por ID de evento
     vistos = set()
@@ -235,37 +242,40 @@ def fetch_toda_jornada(debug=False):
         vistos.add(eid)
         unicos.append(ev)
 
-    log_mensaje(f"📊 Eventos recuperados: {len(unicos)}\n")
+    log_mensaje(f"📊 Eventos únicos recuperados: {len(unicos)}\n")
 
     for ev in unicos:
         try:
-            # DEBUG: mostrar primeros eventos
+            # 1. DEBUG: Mostrar los primeros 3 JSON completos sin recortar
             if debug and debug_count < 3:
-                log_mensaje(f"\n🔍 DEBUG Evento {debug_count}: {json.dumps(ev, indent=2)[:500]}...")
+                log_mensaje(f"\n🔍 [DEBUG] ESTRUCTURA COMPLETA DEL EVENTO {debug_count}:")
+                log_mensaje(json.dumps(ev, indent=2))
+                log_mensaje("="*50)
                 debug_count += 1
             
             # Extrae nombres de equipos
             home = ev.get("homeTeam",{}).get("name") or ev.get("home",{}).get("name") or ev.get("homeTeam")
             away = ev.get("awayTeam",{}).get("name") or ev.get("away",{}).get("name") or ev.get("awayTeam")
             
-            if isinstance(home, dict): 
-                home = home.get("name")
-            if isinstance(away, dict): 
-                away = away.get("name")
+            if isinstance(home, dict): home = home.get("name")
+            if isinstance(away, dict): away = away.get("name")
             
+            # Validación de presencia de equipos
             if not home or not away:
-                sin_equipos += 1
+                contadores["sin_equipos"] += 1
+                if debug:
+                    log_mensaje(f"  ⚠️  Descartado: Datos de equipos ausentes (home: {home}, away: {away})")
                 continue
 
-            # Extrae resultado con robustez
+            # Extrae resultado
             hs, aws = extrae_resultado(ev)
-            
             if hs is None or aws is None:
-                sin_marcador += 1
-                log_mensaje(f"  ⚠️  Sin marcador: {home} vs {away} (hs={hs}, aws={aws})")
+                contadores["sin_marcador"] += 1
+                if debug:
+                    log_mensaje(f"  ⚠️  Descartado (Sin Marcador/No Jugado): {home} vs {away} [hs={hs}, aws={aws}]")
                 continue
 
-            # Extrae fecha con zona horaria
+            # Extrae fecha y formatea goles
             fecha_real = extrae_fecha(ev)
             gol = f"{int(hs)}-{int(aws)}"
 
@@ -274,32 +284,18 @@ def fetch_toda_jornada(debug=False):
             clave_away = clave_equipo(away)
             
             if not clave_home or not clave_away:
+                if not clave_home and not clave_away:
+                    contadores["no_mapeado_ambos"] += 1
+                elif not clave_home:
+                    contadores["no_mapeado_home"] += 1
+                else:
+                    contadores["no_mapeado_away"] += 1
+                    
                 no_mapeados.append(f"{home} vs {away}")
-                log_mensaje(f"  ❌ No mapeado: {home} ({clave_home}) vs {away} ({clave_away})")
+                if debug:
+                    log_mensaje(f"  ❌ Descartado (Error Mapeo): '{home}' ({clave_home}) vs '{away}' ({clave_away})")
                 continue
-
-            # Verifica si ya existe
-            if partido_existe(clave_home, clave_away, fecha_real, gol):
-                log_mensaje(f"  ✓ Ya existe: {home} {gol} {away} ({fecha_real})")
-                continue
-
-            # AGREGAR PARTIDO
-            rh = "V" if int(hs)>int(aws) else "D" if int(hs)<int(aws) else "E"
-            ra = "D" if rh=="V" else "V" if rh=="D" else "E"
-            texto = f"{home} {gol} {away}"
-            
-            PARTIDOS[clave_home].append((fecha_real, texto, rh, "", gol))
-            PARTIDOS[clave_away].append((fecha_real, "", ra, texto, gol))
-            
-            log_mensaje(f"  ✅ Agregado: {texto} ({fecha_real})")
-            nuevos += 1
-            
-        except Exception as e:
-            log_mensaje(f"  ❌ Error procesando evento: {e}")
-            import traceback
-            log_mensaje(f"     {traceback.format_exc()}")
-            continue
-
+                
     log_mensaje(f"\n📊 Nuevos partidos detectados: {nuevos}")
     log_mensaje(f"⚠️  Partidos sin marcador (aún no jugados): {sin_marcador}")
     log_mensaje(f"⚠️  Eventos sin equipos identificables: {sin_equipos}")
