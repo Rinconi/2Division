@@ -110,21 +110,77 @@ def guardar_partidos():
         json.dump({k:[list(x) for x in v] for k,v in PARTIDOS.items()}, f, ensure_ascii=False, indent=2)
     log_mensaje(f"✅ JSON guardado: {historial_file}")
 
+def extrae_resultado(ev):
+    """Extrae el marcador del evento de varias formas posibles"""
+    hs = None
+    aws = None
+    
+    # 1) Intenta: homeScore.current / awayScore.current
+    if isinstance(ev.get("homeScore"), dict):
+        hs = ev.get("homeScore", {}).get("current")
+    
+    if isinstance(ev.get("awayScore"), dict):
+        aws = ev.get("awayScore", {}).get("current")
+    
+    # 2) Intenta: homeScore directo (número)
+    if hs is None:
+        hs = ev.get("homeScore")
+    if aws is None:
+        aws = ev.get("awayScore")
+    
+    # 3) Intenta: score.home / score.away
+    if hs is None:
+        hs = ev.get("score", {}).get("home")
+    if aws is None:
+        aws = ev.get("score", {}).get("away")
+    
+    # 4) Convierte a int si es string
+    if isinstance(hs, str):
+        try:
+            hs = int(hs)
+        except:
+            hs = None
+    if isinstance(aws, str):
+        try:
+            aws = int(aws)
+        except:
+            aws = None
+    
+    return hs, aws
+
+def extrae_fecha(ev):
+    """Extrae la fecha del evento con zona horaria correcta"""
+    ts = ev.get("startTimestamp") or ev.get("timestamp")
+    
+    if ts:
+        try:
+            # Si es string, convertir a int
+            ts_int = int(ts) if isinstance(ts, str) else ts
+            # Convertir desde UTC a Madrid
+            fecha_real = datetime.fromtimestamp(ts_int, tz=ZoneInfo("UTC"))\
+                .astimezone(ZoneInfo("Europe/Madrid")).strftime("%Y-%m-%d")
+            return fecha_real
+        except:
+            pass
+    
+    # Fallback a campo date
+    fecha_raw = ev.get("date", "2026-09-27")
+    if fecha_raw:
+        return fecha_raw[:10]
+    
+    return "2026-09-27"
+
 def partido_existe(clave_home, clave_away, fecha, marcador):
     """Verifica si un partido ya existe en el historial de forma robusta"""
     # Busca en ambos equipos
-    for equipo, marcador_a_verificar in [(clave_home, marcador), (clave_away, marcador)]:
+    for equipo in [clave_home, clave_away]:
         for partido_local in PARTIDOS.get(equipo, []):
             fecha_local = partido_local[0]
-            resultado = partido_local[2]
-            texto = partido_local[1] if equipo == clave_home else partido_local[3]
             gol = partido_local[4]
             
-            # Verifica: misma fecha + mismo marcador + los equipos coinciden en el texto
+            # Verifica: misma fecha + mismo marcador
             if fecha_local == fecha and gol == marcador:
-                # Extra: verificar que los equipos coincidan
-                if (clave_home in normaliza_nombre(texto) or clave_away in normaliza_nombre(texto)):
-                    return True
+                return True
     
     return False
 
@@ -133,6 +189,7 @@ def fetch_toda_jornada():
     global PARTIDOS
     nuevos = 0
     no_mapeados = []
+    sin_marcador = 0
     
     log_mensaje("\n🔄 Buscando partidos nuevos en la API...")
     log_mensaje("Consultando LivescoreFootball (worldcup26.ir)...")
@@ -140,7 +197,7 @@ def fetch_toda_jornada():
     BASE = "https://worldcup26.ir"
     headers = {"User-Agent": "Mozilla/5.0"}
 
-    # ENDPOINTS MEJORADOS: rango más amplio desde 26 sept hasta fin de temporada
+    # ENDPOINTS MEJORADOS: rango amplio desde septiembre hasta fin de temporada
     endpoints = [
         f"{BASE}/get/soccer/esp.2/fixtures?status=all&from=20260901&to=20261231&limit=500",
         f"{BASE}/get/soccer/esp.2/scoreboard?dates=20260926",
@@ -180,6 +237,7 @@ def fetch_toda_jornada():
 
     for ev in unicos:
         try:
+            # Extrae nombres de equipos
             home = ev.get("homeTeam",{}).get("name") or ev.get("home",{}).get("name") or ev.get("homeTeam")
             away = ev.get("awayTeam",{}).get("name") or ev.get("away",{}).get("name") or ev.get("awayTeam")
             
@@ -187,24 +245,22 @@ def fetch_toda_jornada():
                 home = home.get("name")
             if isinstance(away, dict): 
                 away = away.get("name")
-
-            hs = ev.get("homeScore",{}).get("current")
-            aws = ev.get("awayScore",{}).get("current")
             
-            if hs is None: 
-                hs = ev.get("homeScore") or ev.get("score",{}).get("home")
-            if aws is None: 
-                aws = ev.get("awayScore") or ev.get("score",{}).get("away")
-            if hs is None or aws is None: 
+            if not home or not away:
                 continue
 
-            gol = f"{int(hs)}-{int(aws)}"
-            ts = ev.get("startTimestamp") or ev.get("timestamp")
-            if ts:
-                fecha_real = datetime.fromtimestamp(int(ts)).strftime("%Y-%m-%d")
-            else:
-                fecha_real = ev.get("date","2026-09-27")[:10]
+            # Extrae resultado con robustez
+            hs, aws = extrae_resultado(ev)
+            
+            if hs is None or aws is None:
+                sin_marcador += 1
+                continue
 
+            # Extrae fecha con zona horaria
+            fecha_real = extrae_fecha(ev)
+            gol = f"{int(hs)}-{int(aws)}"
+
+            # Mapea equipos
             clave_home = clave_equipo(home)
             clave_away = clave_equipo(away)
             
@@ -212,9 +268,9 @@ def fetch_toda_jornada():
                 no_mapeados.append(f"{home} vs {away}")
                 continue
 
-            # Verificar si ya existe (mejorado)
+            # Verifica si ya existe
             if partido_existe(clave_home, clave_away, fecha_real, gol):
-                log_mensaje(f"  ✓ Ya existe: {home} {gol} {away}")
+                log_mensaje(f"  ✓ Ya existe: {home} {gol} {away} ({fecha_real})")
                 continue
 
             # AGREGAR PARTIDO
@@ -225,7 +281,7 @@ def fetch_toda_jornada():
             PARTIDOS[clave_home].append((fecha_real, texto, rh, "", gol))
             PARTIDOS[clave_away].append((fecha_real, "", ra, texto, gol))
             
-            log_mensaje(f"  ✅ Agregado: {texto}")
+            log_mensaje(f"  ✅ Agregado: {texto} ({fecha_real})")
             nuevos += 1
             
         except Exception as e:
@@ -233,10 +289,11 @@ def fetch_toda_jornada():
             continue
 
     log_mensaje(f"\n📊 Nuevos partidos detectados: {nuevos}")
+    log_mensaje(f"⚠️  Partidos sin marcador (aún no jugados): {sin_marcador}")
     
     if no_mapeados:
-        log_mensaje(f"\n⚠️  Equipos no mapeados ({len(no_mapeados)}):")
-        for eq in set(no_mapeados):
+        log_mensaje(f"\n⚠️  Equipos no mapeados ({len(set(no_mapeados))}):")
+        for eq in sorted(set(no_mapeados)):
             log_mensaje(f"   - {eq}")
     
     return nuevos
@@ -281,17 +338,17 @@ def recalcular(d):
 
 def mostrar_clasificacion(tabla):
     """Muestra la clasificación en consola"""
-    log_mensaje("\n" + "="*80)
+    log_mensaje("\n" + "="*90)
     log_mensaje("CLASIFICACIÓN ACTUAL")
-    log_mensaje("="*80)
+    log_mensaje("="*90)
     log_mensaje(f"{'POS':<4} {'EQUIPO':<25} {'PJ':<4} {'PTS':<4} {'G':<3} {'E':<3} {'P':<3} {'GF':<3} {'GC':<3} {'DG':<4}")
-    log_mensaje("-"*80)
+    log_mensaje("-"*90)
     for i, (eq, pj, pts, g, e, p, gf, gc) in enumerate(tabla, 1):
         dg = gf - gc
         dg_str = f"+{dg}" if dg > 0 else str(dg)
         eq_name = eq.replace("-", " ").title()
         log_mensaje(f"{i:<4} {eq_name:<25} {pj:<4} {pts:<4} {g:<3} {e:<3} {p:<3} {gf:<3} {gc:<3} {dg_str:<4}")
-    log_mensaje("="*80)
+    log_mensaje("="*90)
 
 def get_logo(eq):
     """Obtiene el logo de un equipo si existe"""
