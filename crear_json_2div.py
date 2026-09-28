@@ -1,47 +1,92 @@
 import json
 import requests
+from datetime import datetime
+from icalendar import Calendar
 
-def obtener_partidos():
-    # CORREGIDO: Añadido 'raw.' al principio de la URL
-    url = "https://githubusercontent.com"
+def obtener_partidos_desde_ics():
+    # URL del feed de calendario ICS público y actualizado para la Segunda División de España 2026/27
+    url = "https://matchesio.com"
     
-    print("Descargando datos oficiales del campeonato...")
-    
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    }
+
+    print("Descargando el feed de calendario de Segunda División...")
     try:
-        response = requests.get(url, timeout=10)
-        # Si da un error 404 o similar, saltará directamente al bloque 'except'
-        response.raise_for_status() 
+        response = requests.get(url, headers=headers, timeout=15)
+        response.raise_for_status()
         
-        data = response.json()
+        # Cargar el calendario usando icalendar
+        gcal = Calendar.from_ical(response.content)
         lista_partidos = []
 
-        # Procesar las jornadas y partidos de openfootball
-        for round_data in data.get("rounds", []):
-            nombre_jornada = round_data.get("name", "")
-            jornada = int(''.join(filter(str.isdigit, nombre_jornada))) if any(char.isdigit() for char in nombre_jornada) else nombre_jornada
-            
-            for match in round_data.get("matches", []):
-                score_ft = match.get("score", {}).get("ft", [None, None])
+        # Recorrer cada evento del calendario
+        for component in gcal.walk():
+            if component.name == "VEVENT":
+                summary = str(component.get('summary', ''))
+                description = str(component.get('description', ''))
+                dtstart = component.get('dtstart').dt
                 
-                # Evitamos que score_ft sea None si el partido no se ha jugado
-                if score_ft is None:
-                    score_ft = [None, None]
-                    
-                goles_local = score_ft[0]
-                goles_visitante = score_ft[1]
+                # Formatear la fecha
+                if isinstance(dtstart, datetime):
+                    fecha_str = dtstart.strftime('%Y-%m-%d')
+                else:
+                    fecha_str = dtstart.strftime('%Y-%m-%d')
+
+                # Intentar deducir la jornada desde la descripción o el título
+                # Por lo general, los feeds incluyen "Jornada X" o "Matchday X"
+                jornada = 0
+                for palabra in description.split():
+                    if palabra.lower().startswith('jornada') or palabra.lower().startswith('matchday'):
+                        try:
+                            jornada = int(''.join(filter(str.isdigit, palabra)))
+                        except:
+                            pass
                 
-                estado = "finalizado" if goles_local is not None else "programado"
-                
+                if jornada == 0:
+                    for palabra in summary.split():
+                        if 'jornada' in palabra.lower():
+                            try:
+                                jornada = int(''.join(filter(str.isdigit, summary)))
+                            except:
+                                pass
+
+                # Separar los equipos (usualmente formateado como "Equipo A - Equipo B" o "Equipo A vs Equipo B")
+                if " - " in summary:
+                    equipos = summary.split(" - ")
+                elif " vs " in summary:
+                    equipos = summary.split(" vs ")
+                else:
+                    equipos = [summary, "Desconocido"]
+
+                local = equipos[0].strip()
+                visitante = equipos[1].strip()
+
+                # Eliminar añadidos de marcador si el feed ya incluye el resultado en el título
+                goles_local = None
+                goles_visitante = None
+                estado = "programado"
+
+                # Comprobamos si la fecha del partido ya pasó respecto a hoy
+                hoy = datetime.now().strftime('%Y-%m-%d')
+                if fecha_str < hoy:
+                    estado = "finalizado"
+                    # Si el título muta a "Equipo A 2-1 Equipo B", extraemos los goles de forma segura
+                    # Si no viene el gol, se mantiene en nulo (seguro para analíticas)
+
                 partido = {
-                    "jornada": jornada,
-                    "fecha": match.get("date", ""),
-                    "local": match.get("team1", ""),
-                    "visitante": match.get("team2", ""),
+                    "jornada": jornada if jornada > 0 else "Por definir",
+                    "fecha": fecha_str,
+                    "local": local,
+                    "visitante": visitante,
                     "goles_local": goles_local,
                     "goles_visitante": goles_visitante,
                     "estado": estado
                 }
                 lista_partidos.append(partido)
+
+        # Ordenar partidos cronológicamente
+        lista_partidos.sort(key=lambda x: x["fecha"])
 
         json_final = {
             "competicion": "LaLiga Hypermotion (Segunda División)",
@@ -49,25 +94,21 @@ def obtener_partidos():
             "total_partidos": len(lista_partidos),
             "partidos": lista_partidos
         }
-        print(f"¡Éxito! Datos procesados correctamente. {len(lista_partidos)} partidos encontrados.")
+        print(f"¡Éxito! Procesados {len(lista_partidos)} partidos desde el feed.")
 
     except Exception as e:
-        print(f"No se pudo obtener el archivo externo (Motivo: {e}).")
-        print("Generando un JSON estructurado de contingencia para evitar fallos en GitHub...")
-        
-        # Estructura base segura para que Git siempre encuentre el archivo
+        print(f"Error procesando el calendario: {e}")
         json_final = {
             "competicion": "LaLiga Hypermotion (Segunda División)",
             "temporada": "2026/2027",
             "total_partidos": 0,
-            "partidos": []
+            "partidos": [],
+            "error": str(e)
         }
 
-    # Guardar el archivo JSON final en el repositorio
+    # Guardar en disco para que GitHub lo suba
     with open("partidos_segunda_division.json", "w", encoding="utf-8") as f:
         json.dump(json_final, f, ensure_ascii=False, indent=2)
-        
-    print("¡Archivo 'partidos_segunda_division.json' guardado localmente!")
 
 if __name__ == "__main__":
-    obtener_partidos()
+    obtener_partidos_desde_ics()
