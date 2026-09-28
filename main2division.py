@@ -295,10 +295,39 @@ def fetch_toda_jornada(debug=False):
                 if debug:
                     log_mensaje(f"  ❌ Descartado (Error Mapeo): '{home}' ({clave_home}) vs '{away}' ({clave_away})")
                 continue
-                
-    log_mensaje(f"\n📊 Nuevos partidos detectados: {nuevos}")
-    log_mensaje(f"⚠️  Partidos sin marcador (aún no jugados): {sin_marcador}")
-    log_mensaje(f"⚠️  Eventos sin equipos identificables: {sin_equipos}")
+            if partido_existe(clave_home, clave_away, fecha_real, gol):
+                contadores["ya_existe"] += 1
+                if debug:
+                    log_mensaje(f"  ✓ Descartado (Ya Registrado): {home} {gol} {away} ({fecha_real})")
+                continue
+
+            rh = "V" if int(hs)>int(aws) else "D" if int(hs)<int(aws) else "E"
+            ra = "D" if rh=="V" else "V" if rh=="D" else "E"
+            texto = f"{home} {gol} {away}"
+
+    PARTIDOS[clave_away].append((fecha_real, "", ra, texto, gol))
+    log_mensaje(f"  ✅ Agregado: {texto} ({fecha_real})")
+    nuevos += 1
+        except Exception as e:
+        contadores["con_error"] += 1
+    log_mensaje(f"  💥 ERROR CRÍTICO procesando evento: {e}")
+        import traceback
+    log_mensaje(traceback.format_exc())
+    continue
+    log_mensaje("\n" + "="*50)
+    log_mensaje("📊 AUDITORÍA DE EVENTOS DESCARTADOS Y FILTRADOS")
+    log_mensaje("="*50)
+    log_mensaje(f"  ▶️ Nuevos partidos agregados:     {nuevos}")
+    log_mensaje(f"  ⚠️ Saltados por falta de marcador: {contadores['sin_marcador']}")
+    log_mensaje(f"  ✓ Saltados porque ya existían:     {contadores['ya_existe']}")
+    log_mensaje(f"  ❌ Error mapeo (Local no existe):  {contadores['no_mapeado_home']}")
+    log_mensaje(f"  ❌ Error mapeo (Visita no existe): {contadores['no_mapeado_away']}")
+    log_mensaje(f"  ❌ Error mapeo (Ninguno existe):   {contadores['no_mapeado_ambos']}")
+    log_mensaje(f"  ⚠️ Estructuras rotas/sin equipos:  {contadores['sin_equipos']}")
+    log_mensaje(f"  💥 Errores ocultos (Excepciones):  {contadores['con_error']}")
+    log_mensaje("="*50)
+    
+    
     
     if no_mapeados:
         log_mensaje(f"\n⚠️  Equipos no mapeados ({len(set(no_mapeados))}):")
