@@ -1,0 +1,44 @@
+name: Actualizar JSON de Partidos
+
+on:
+  schedule:
+    # Se ejecuta de forma automática todos los días a las 23:00 UTC (al terminar la jornada)
+    - cron: '0 23 * * *'
+  workflow_dispatch: # Esto activa un botón para ejecutarlo manualmente cuando quieras
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write # Permiso clave para que GitHub pueda guardar el JSON en tu repositorio
+
+    steps:
+    # 1. Descargar el código del repositorio
+    - name: Checkout del repositorio
+      uses: actions/checkout@v4
+
+    # 2. Configurar el entorno de Python
+    - name: Configurar Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    # 3. Instalar las dependencias (requests y beautifulsoup4)
+    - name: Instalar dependencias
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    # 4. Ejecutar el script (Asegúrate de poner el nombre exacto de tu archivo .py)
+    - name: Ejecutar script de scraping
+      run: python crear_json_2div.py
+
+    # 5. Guardar los cambios automáticamente en GitHub
+    - name: Hacer commit y push del archivo JSON creado
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "41898282+github-actions[bot]@://github.com"
+        git add partidos_segunda_division.json
+        git diff-index --quiet HEAD || git commit -m "Autoupdate: Partidos actualizados [skip ci]"
+        git push
