@@ -11,6 +11,7 @@ from reportlab.lib.enums import TA_CENTER
 out_dir = pathlib.Path("informes")
 out_dir.mkdir(exist_ok=True)
 historial_file = out_dir / "historial_hypermotion.json"
+log_file = out_dir / "ejecuciones.log"
 
 # MAPEO de equipos
 MAPEO = {
@@ -38,6 +39,14 @@ MAPEO = {
     "albacete":"albacete","albacete bp":"albacete",
 }
 
+def log_mensaje(msg):
+    """Escribe en log y consola"""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    log_msg = f"[{timestamp}] {msg}"
+    print(msg)
+    with open(log_file, 'a', encoding='utf-8') as f:
+        f.write(log_msg + "\n")
+
 def normaliza_nombre(s):
     """Normaliza nombres de equipos para búsqueda"""
     s = s.lower()
@@ -62,10 +71,10 @@ def cargar_partidos():
                 data = json.load(f)
                 # Convertir listas a tuplas
                 PARTIDOS = {k: [tuple(x) for x in v] for k, v in data.items()}
-            print(f"✅ Cargados partidos desde {historial_file.name}")
+            log_mensaje(f"✅ Cargados partidos desde {historial_file.name}")
             return PARTIDOS
         except Exception as e:
-            print(f"❌ Error cargando JSON: {e}")
+            log_mensaje(f"❌ Error cargando JSON: {e}")
     
     # Si no existe o falla, crear estructura con todos los equipos
     PARTIDOS = {
@@ -92,37 +101,60 @@ def cargar_partidos():
         "albacete": [],
         "ceuta": [],
     }
-    print("⚠️  Estructura PARTIDOS vacía (JSON no encontrado)")
+    log_mensaje("⚠️  Estructura PARTIDOS vacía (JSON no encontrado)")
     return PARTIDOS
 
 def guardar_partidos():
     """Guarda PARTIDOS en JSON"""
     with open(historial_file, 'w', encoding='utf-8') as f:
         json.dump({k:[list(x) for x in v] for k,v in PARTIDOS.items()}, f, ensure_ascii=False, indent=2)
-    print(f"✅ JSON guardado: {historial_file}")
+    log_mensaje(f"✅ JSON guardado: {historial_file}")
+
+def partido_existe(clave_home, clave_away, fecha, marcador):
+    """Verifica si un partido ya existe en el historial de forma robusta"""
+    # Busca en ambos equipos
+    for equipo, marcador_a_verificar in [(clave_home, marcador), (clave_away, marcador)]:
+        for partido_local in PARTIDOS.get(equipo, []):
+            fecha_local = partido_local[0]
+            resultado = partido_local[2]
+            texto = partido_local[1] if equipo == clave_home else partido_local[3]
+            gol = partido_local[4]
+            
+            # Verifica: misma fecha + mismo marcador + los equipos coinciden en el texto
+            if fecha_local == fecha and gol == marcador:
+                # Extra: verificar que los equipos coincidan
+                if (clave_home in normaliza_nombre(texto) or clave_away in normaliza_nombre(texto)):
+                    return True
+    
+    return False
 
 def fetch_toda_jornada():
     """Obtiene partidos nuevos de la API"""
     global PARTIDOS
     nuevos = 0
-    print("\n🔄 Buscando partidos nuevos en la API...")
-    print("Consultando LivescoreFootball (worldcup26.ir)...\n")
+    no_mapeados = []
+    
+    log_mensaje("\n🔄 Buscando partidos nuevos en la API...")
+    log_mensaje("Consultando LivescoreFootball (worldcup26.ir)...")
 
     BASE = "https://worldcup26.ir"
     headers = {"User-Agent": "Mozilla/5.0"}
 
+    # ENDPOINTS MEJORADOS: rango más amplio desde 26 sept hasta fin de temporada
     endpoints = [
-        f"{BASE}/get/soccer/esp.2/fixtures?status=all&from=20260926&to=20261231&limit=500",
-        f"{BASE}/get/soccer/esp.2/scoreboard?dates=20260927",
+        f"{BASE}/get/soccer/esp.2/fixtures?status=all&from=20260901&to=20261231&limit=500",
         f"{BASE}/get/soccer/esp.2/scoreboard?dates=20260926",
+        f"{BASE}/get/soccer/esp.2/scoreboard?dates=20260927",
         f"{BASE}/get/soccer/esp.2/scoreboard?dates=20260928",
+        f"{BASE}/get/soccer/esp.2/scoreboard?dates=20260929",
+        f"{BASE}/get/soccer/esp.2/scoreboard?dates=20260930",
     ]
 
     eventos = []
     for url in endpoints:
         try:
             r = requests.get(url, headers=headers, timeout=20)
-            print(f" -> {r.status_code} {len(r.text)} bytes")
+            log_mensaje(f" -> {r.status_code} ({len(r.text)} bytes)")
             if r.status_code != 200: 
                 continue
             data = r.json()
@@ -132,9 +164,9 @@ def fetch_toda_jornada():
             if isinstance(batch, list) and len(batch) > 0:
                 eventos.extend(batch)
         except Exception as e:
-            print(f" ✗ Error: {e}")
+            log_mensaje(f" ✗ Error: {e}")
 
-    # Deduplicar
+    # Deduplicar por ID de evento
     vistos = set()
     unicos = []
     for ev in eventos:
@@ -144,7 +176,7 @@ def fetch_toda_jornada():
         vistos.add(eid)
         unicos.append(ev)
 
-    print(f"📊 Eventos recuperados: {len(unicos)}\n")
+    log_mensaje(f"📊 Eventos recuperados: {len(unicos)}\n")
 
     for ev in unicos:
         try:
@@ -177,14 +209,15 @@ def fetch_toda_jornada():
             clave_away = clave_equipo(away)
             
             if not clave_home or not clave_away:
-                print(f"  ⚠️  No mapeado: {home} vs {away}")
+                no_mapeados.append(f"{home} vs {away}")
                 continue
 
-            # Verificar si ya existe
-            ya = any(fecha_real==x[0] and gol==x[4] for x in PARTIDOS.get(clave_home,[]))
-            if ya: 
+            # Verificar si ya existe (mejorado)
+            if partido_existe(clave_home, clave_away, fecha_real, gol):
+                log_mensaje(f"  ✓ Ya existe: {home} {gol} {away}")
                 continue
 
+            # AGREGAR PARTIDO
             rh = "V" if int(hs)>int(aws) else "D" if int(hs)<int(aws) else "E"
             ra = "D" if rh=="V" else "V" if rh=="D" else "E"
             texto = f"{home} {gol} {away}"
@@ -192,13 +225,20 @@ def fetch_toda_jornada():
             PARTIDOS[clave_home].append((fecha_real, texto, rh, "", gol))
             PARTIDOS[clave_away].append((fecha_real, "", ra, texto, gol))
             
-            print(f"  ✅ Agregado: {texto}")
+            log_mensaje(f"  ✅ Agregado: {texto}")
             nuevos += 1
             
         except Exception as e:
+            log_mensaje(f"  ❌ Error procesando evento: {e}")
             continue
 
-    print(f"\n📊 Nuevos partidos detectados: {nuevos}")
+    log_mensaje(f"\n📊 Nuevos partidos detectados: {nuevos}")
+    
+    if no_mapeados:
+        log_mensaje(f"\n⚠️  Equipos no mapeados ({len(no_mapeados)}):")
+        for eq in set(no_mapeados):
+            log_mensaje(f"   - {eq}")
+    
     return nuevos
 
 def recalcular(d):
@@ -238,6 +278,20 @@ def recalcular(d):
     # Ordenar por: puntos DESC, diferencia goles DESC, goles a favor DESC
     t.sort(key=lambda x: (x[2], x[6]-x[7], x[6]), reverse=True)
     return t
+
+def mostrar_clasificacion(tabla):
+    """Muestra la clasificación en consola"""
+    log_mensaje("\n" + "="*80)
+    log_mensaje("CLASIFICACIÓN ACTUAL")
+    log_mensaje("="*80)
+    log_mensaje(f"{'POS':<4} {'EQUIPO':<25} {'PJ':<4} {'PTS':<4} {'G':<3} {'E':<3} {'P':<3} {'GF':<3} {'GC':<3} {'DG':<4}")
+    log_mensaje("-"*80)
+    for i, (eq, pj, pts, g, e, p, gf, gc) in enumerate(tabla, 1):
+        dg = gf - gc
+        dg_str = f"+{dg}" if dg > 0 else str(dg)
+        eq_name = eq.replace("-", " ").title()
+        log_mensaje(f"{i:<4} {eq_name:<25} {pj:<4} {pts:<4} {g:<3} {e:<3} {p:<3} {gf:<3} {gc:<3} {dg_str:<4}")
+    log_mensaje("="*80)
 
 def get_logo(eq):
     """Obtiene el logo de un equipo si existe"""
@@ -391,13 +445,13 @@ def generar_pdf():
         story.append(PageBreak())
     
     doc.build(story)
-    print(f"✅ PDF generado: {pdf_file}")
+    log_mensaje(f"✅ PDF generado: {pdf_file}")
 
 # MAIN
 if __name__ == "__main__":
-    print("=" * 70)
-    print("🏆 LALIGA HYPERMOTION - ACTUALIZAR CLASIFICACIÓN")
-    print("=" * 70)
+    log_mensaje("\n" + "=" * 70)
+    log_mensaje("🏆 LALIGA HYPERMOTION - ACTUALIZAR CLASIFICACIÓN")
+    log_mensaje("=" * 70)
     
     # 1. Cargar datos del JSON
     PARTIDOS = cargar_partidos()
@@ -408,14 +462,20 @@ if __name__ == "__main__":
     # 3. Guardar cambios
     if nuevos > 0:
         guardar_partidos()
-        print(f"\n✅ {nuevos} partidos nuevos añadidos")
+        log_mensaje(f"\n✅ {nuevos} partidos nuevos añadidos")
     else:
-        print("\n✓ Sin cambios en los datos")
+        log_mensaje("\n✓ Sin cambios en los datos")
     
-    # 4. Generar PDF con datos completos
-    print("\n📄 Generando informe PDF...")
+    # 4. Mostrar clasificación
+    TABLA = recalcular(PARTIDOS)
+    J = max(len(v) for v in PARTIDOS.values()) if PARTIDOS.values() else 0
+    log_mensaje(f"\n📊 Jornadas jugadas: {J}")
+    mostrar_clasificacion(TABLA)
+    
+    # 5. Generar PDF con datos completos
+    log_mensaje("\n📄 Generando informe PDF...")
     generar_pdf()
     
-    print("\n" + "=" * 70)
-    print("✅ PROCESO COMPLETADO")
-    print("=" * 70)
+    log_mensaje("\n" + "=" * 70)
+    log_mensaje("✅ PROCESO COMPLETADO")
+    log_mensaje("=" * 70 + "\n")
