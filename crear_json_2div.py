@@ -1,114 +1,114 @@
-import json
-import requests
-from datetime import datetime
-from icalendar import Calendar
+# CELDA RESULTADOS 2a DIVISION -> JSON SCRAPING resultados-futbol.com (SIN API KEY)
+import requests, json, re
+from bs4 import BeautifulSoup
 
-def obtener_partidos_desde_ics():
-    # URL del feed de calendario ICS público y actualizado para la Segunda División de España 2026/27
-    url = "https://matchesio.com"
-    
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-    }
+headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+}
 
-    print("Descargando el feed de calendario de Segunda División...")
+# 2a Division 25/26
+URL = "https://www.resultados-futbol.com/segunda/grupo1"
+
+print(f"Bajando {URL}...")
+r = requests.get(URL, headers=headers, timeout=15)
+soup = BeautifulSoup(r.text, "html.parser")
+
+resultados = []
+
+# La web tiene una tabla con clase 'vevent' por cada partido
+partidos = soup.select("tr.vevent")
+if not partidos:
+    # Plan B por si cambian clase: busca todas las filas con resultado x-y
+    partidos = soup.find_all("tr", string=re.compile(r"\d+ - \d+"))
+
+print(f"Filas encontradas: {len(partidos)}")
+
+for p in partidos:
     try:
-        response = requests.get(url, headers=headers, timeout=15)
-        response.raise_for_status()
-        
-        # Cargar el calendario usando icalendar
-        gcal = Calendar.from_ical(response.content)
-        lista_partidos = []
+        # Estructura tipica: local - resultado - visitante
+        equipos = p.select("a")
+        if len(equipos) < 2:
+            continue
 
-        # Recorrer cada evento del calendario
-        for component in gcal.walk():
-            if component.name == "VEVENT":
-                summary = str(component.get('summary', ''))
-                description = str(component.get('description', ''))
-                dtstart = component.get('dtstart').dt
-                
-                # Formatear la fecha
-                if isinstance(dtstart, datetime):
-                    fecha_str = dtstart.strftime('%Y-%m-%d')
-                else:
-                    fecha_str = dtstart.strftime('%Y-%m-%d')
+        local = equipos[0].get_text(strip=True)
+        visitante = equipos[1].get_text(strip=True)
 
-                # Intentar deducir la jornada desde la descripción o el título
-                # Por lo general, los feeds incluyen "Jornada X" o "Matchday X"
-                jornada = 0
-                for palabra in description.split():
-                    if palabra.lower().startswith('jornada') or palabra.lower().startswith('matchday'):
-                        try:
-                            jornada = int(''.join(filter(str.isdigit, palabra)))
-                        except:
-                            pass
-                
-                if jornada == 0:
-                    for palabra in summary.split():
-                        if 'jornada' in palabra.lower():
-                            try:
-                                jornada = int(''.join(filter(str.isdigit, summary)))
-                            except:
-                                pass
+        # El marcador
+        marcador_tag = p.select_one("a.clase") or p.select_one(".clase") or p.find(string=re.compile(r"\d+ - \d+"))
+        if not marcador_tag:
+            continue
 
-                # Separar los equipos (usualmente formateado como "Equipo A - Equipo B" o "Equipo A vs Equipo B")
-                if " - " in summary:
-                    equipos = summary.split(" - ")
-                elif " vs " in summary:
-                    equipos = summary.split(" vs ")
-                else:
-                    equipos = [summary, "Desconocido"]
+        marcador = marcador_tag.get_text(strip=True) if hasattr(marcador_tag, 'get_text') else str(marcador_tag).strip()
+        if "-" not in marcador:
+            continue
 
-                local = equipos[0].strip()
-                visitante = equipos[1].strip()
+        # Limpiar marcador 2 - 1 -> 2-1
+        marcador = marcador.replace(" ", "")
+        gl, gv = marcador.split("-")
 
-                # Eliminar añadidos de marcador si el feed ya incluye el resultado en el título
-                goles_local = None
-                goles_visitante = None
-                estado = "programado"
+        # Solo si ya se ha jugado (numerico)
+        if not gl.isdigit():
+            continue
 
-                # Comprobamos si la fecha del partido ya pasó respecto a hoy
-                hoy = datetime.now().strftime('%Y-%m-%d')
-                if fecha_str < hoy:
-                    estado = "finalizado"
-                    # Si el título muta a "Equipo A 2-1 Equipo B", extraemos los goles de forma segura
-                    # Si no viene el gol, se mantiene en nulo (seguro para analíticas)
+        # Jornada y fecha (si está)
+        jornada_tag = p.find_previous("th")
+        jornada = jornada_tag.get_text(strip=True) if jornada_tag else "?"
 
-                partido = {
-                    "jornada": jornada if jornada > 0 else "Por definir",
-                    "fecha": fecha_str,
-                    "local": local,
-                    "visitante": visitante,
-                    "goles_local": goles_local,
-                    "goles_visitante": goles_visitante,
-                    "estado": estado
-                }
-                lista_partidos.append(partido)
+        fecha_tag = p.select_one(".fecha") or p.select_one("td.fecha")
+        fecha = fecha_tag.get_text(strip=True) if fecha_tag else ""
 
-        # Ordenar partidos cronológicamente
-        lista_partidos.sort(key=lambda x: x["fecha"])
-
-        json_final = {
-            "competicion": "LaLiga Hypermotion (Segunda División)",
-            "temporada": "2026/2027",
-            "total_partidos": len(lista_partidos),
-            "partidos": lista_partidos
-        }
-        print(f"¡Éxito! Procesados {len(lista_partidos)} partidos desde el feed.")
-
+        resultados.append({
+            "jornada": jornada,
+            "fecha": fecha,
+            "local": local,
+            "visitante": visitante,
+            "goles_local": int(gl),
+            "goles_visitante": int(gv),
+            "resultado": f"{gl}-{gv}"
+        })
     except Exception as e:
-        print(f"Error procesando el calendario: {e}")
-        json_final = {
-            "competicion": "LaLiga Hypermotion (Segunda División)",
-            "temporada": "2026/2027",
-            "total_partidos": 0,
-            "partidos": [],
-            "error": str(e)
-        }
+        continue
 
-    # Guardar en disco para que GitHub lo suba
-    with open("partidos_segunda_division.json", "w", encoding="utf-8") as f:
-        json.dump(json_final, f, ensure_ascii=False, indent=2)
+# Si el raspado directo falla por cambio de web, usamos plan B con pandas (mucho mas robusto)
+if len(resultados) < 20:
+    print("Plan A flojo, probando Plan B con pandas...")
+    import pandas as pd
+    try:
+        tables = pd.read_html(URL, flavor='bs4')
+        for df in tables:
+            # Busca tabla que tenga Local y Visitante
+            cols = [str(c).lower() for c in df.columns]
+            if any('local' in c or 'equipo' in c for c in cols):
+                print(f"Tabla encontrada con {len(df)} filas")
+                # Aquí lo adaptamos
+                for _, row in df.iterrows():
+                    try:
+                        txt = " ".join([str(x) for x in row.values])
+                        m = re.search(r'(\d+)\s*-\s*(\d+)', txt)
+                        if m:
+                            # Intentar sacar equipos
+                            resultados.append({
+                                "jornada": "",
+                                "fecha": "",
+                                "local": str(row.values[0]),
+                                "visitante": str(row.values[-1]),
+                                "goles_local": int(m.group(1)),
+                                "goles_visitante": int(m.group(2)),
+                                "resultado": f"{m.group(1)}-{m.group(2)}"
+                            })
+                    except:
+                        pass
+    except Exception as e:
+        print(f"Error plan B: {e}")
 
-if __name__ == "__main__":
-    obtener_partidos_desde_ics()
+# Ordenar y guardar
+nombre = "resultados_2A_25_26_jugados.json"
+with open(nombre, "w", encoding="utf-8") as f:
+    json.dump(resultados, f, ensure_ascii=False, indent=2)
+
+print(f"\n✅ JSON CREADO: {nombre}")
+print(f"Total partidos jugados: {len(resultados)}")
+if resultados:
+    print(json.dumps(resultados[:5], ensure_ascii=False, indent=2))
+else:
+    print("⚠️ La web ha cambiado estructura. Dime y te preparo la versión con fbref.com que es mas estable.")
