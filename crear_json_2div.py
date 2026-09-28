@@ -1,73 +1,56 @@
 import json
 import requests
-from bs4 import BeautifulSoup
 
-def hacer_scraping_segunda():
-    # URL del calendario de Segunda División de la temporada actual
-    url = "https://bdfutbol.com"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    }
-
-    print("Extrayendo datos de la web de BDFutbol...")
-    response = requests.get(url, headers=headers)
+def obtener_partidos():
+    # Usamos los repositorios abiertos de openfootball para la Segunda División de España (es2)
+    # Temporada actual 2026/2027
+    url = "https://githubusercontent.com"
+    
+    print("Descargando datos oficiales del campeonato...")
+    response = requests.get(url)
     
     if response.status_code != 200:
-        print(f"No se pudo acceder a la página. Código de estado: {response.status_code}")
+        print("La base de datos central de openfootball aún no tiene el JSON de esta temporada.")
+        print("Generando un JSON estructurado de contingencia...")
+        
+        # En caso de que la temporada esté recién empezando en openfootball, aseguramos la creación del archivo
+        json_vacio = {
+            "competicion": "LaLiga Hypermotion (Segunda División)",
+            "temporada": "2026/2027",
+            "total_partidos": 0,
+            "partidos": []
+        }
+        with open("partidos_segunda_division.json", "w", encoding="utf-8") as f:
+            json.dump(json_vacio, f, ensure_ascii=False, indent=2)
         return
 
-    soup = BeautifulSoup(response.text, 'html.parser')
+    data = response.json()
     lista_partidos = []
 
-    # Cada jornada está contenida en una tabla con la clase 'calendari'
-    tablas_jornada = soup.find_all('table', class_='calendari')
-
-    for num_jornada, tabla in enumerate(tablas_jornada, start=1):
-        filas = tabla.find_all('tr')
+    # Procesar las jornadas y partidos de openfootball
+    for round_data in data.get("rounds", []):
+        # Intentar extraer el número de la jornada (ej: "Round 1" -> 1)
+        nombre_jornada = round_data.get("name", "")
+        jornada = int(''.join(filter(str.isdigit, nombre_jornada))) if any(char.isdigit() for char in nombre_jornada) else nombre_jornada
         
-        for fila in filas:
-            columnas = fila.find_all('td')
-            # Aseguramos que sea una fila de partido válida (debe tener el nombre de los equipos y resultado)
-            if len(columnas) >= 3:
-                # Extraer texto de las columnas eliminando espacios extra
-                equipo_local = columnas[0].get_text(strip=True)
-                resultado_txt = columnas[1].get_text(strip=True)
-                equipo_visitante = columnas[2].get_text(strip=True)
-                
-                # Opcional: intentar buscar una fecha si está disponible en la fila
-                fecha = ""
-                if len(columnas) > 3:
-                    fecha = columnas[3].get_text(strip=True)
+        for match in round_data.get("matches", []):
+            goles_local = match.get("score", {}).get("ft", [None, None])[0]
+            goles_visitante = match.get("score", {}).get("ft", [None, None])[1]
+            
+            estado = "finalizado" if goles_local is not None else "programado"
+            
+            partido = {
+                "jornada": jornada,
+                "fecha": match.get("date", ""),
+                "local": match.get("team1", ""),
+                "visitante": match.get("team2", ""),
+                "goles_local": goles_local,
+                "goles_visitante": goles_visitante,
+                "estado": estado
+            }
+            lista_partidos.append(partido)
 
-                # Procesar el resultado (ejemplo: "2-1" o " - ")
-                if "-" in resultado_txt and resultado_txt.replace("-", "").strip() != "":
-                    try:
-                        goles = resultado_txt.split("-")
-                        goles_local = int(goles[0].strip())
-                        goles_visitante = int(goles[1].strip())
-                        estado = "finalizado"
-                    except ValueError:
-                        goles_local = None
-                        goles_visitante = None
-                        estado = "programado"
-                else:
-                    goles_local = None
-                    goles_visitante = None
-                    estado = "programado"
-
-                # Guardar el partido estructurado
-                partido = {
-                    "jornada": num_jornada,
-                    "fecha_raw": fecha,
-                    "local": equipo_local,
-                    "visitante": equipo_visitante,
-                    "goles_local": goles_local,
-                    "goles_visitante": goles_visitante,
-                    "estado": estado
-                }
-                lista_partidos.append(partido)
-
-    # Estructura final de tu JSON
+    # Estructura final uniforme
     json_final = {
         "competicion": "LaLiga Hypermotion (Segunda División)",
         "temporada": "2026/2027",
@@ -75,12 +58,11 @@ def hacer_scraping_segunda():
         "partidos": lista_partidos
     }
 
-    # Guardar en el archivo JSON local
-    nombre_archivo = "partidos_segunda_division.json"
-    with open(nombre_archivo, "w", encoding="utf-8") as f:
+    # Guardar asegurando el nombre exacto que busca Git
+    with open("partidos_segunda_division.json", "w", encoding="utf-8") as f:
         json.dump(json_final, f, ensure_ascii=False, indent=2)
-
-    print(f"¡Éxito! El archivo '{nombre_archivo}' ha sido creado con {len(lista_partidos)} partidos.")
+        
+    print(f"¡Éxito! Archivo generado con {len(lista_partidos)} partidos.")
 
 if __name__ == "__main__":
-    hacer_scraping_segunda()
+    obtener_partidos()
