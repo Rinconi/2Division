@@ -1,0 +1,657 @@
+{
+    "campeonato": "Campeonato de España de Segunda División (LALIGA Hypermotion)",
+    "temporada": "2026/2027",
+    "jornadas": [
+        {
+            "jornada": 1,
+            "partidos": [
+                {
+                    "fecha": "2026-08-14",
+                    "local": "Girona FC",
+                    "visitante": "CE Sabadell FC",
+                    "goles_local": 2,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-08-15",
+                    "local": "AD Ceuta FC",
+                    "visitante": "CD Tenerife",
+                    "goles_local": 1,
+                    "goles_visitante": 0,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-08-15",
+                    "local": "Granada CF",
+                    "visitante": "Córdoba CF",
+                    "goles_local": 2,
+                    "goles_visitante": 2,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-08-15",
+                    "local": "RC Celta Fortuna",
+                    "visitante": "Real Oviedo",
+                    "goles_local": 0,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-08-16",
+                    "local": "Real Valladolid CF",
+                    "visitante": "CD Eldense",
+                    "goles_local": 3,
+                    "goles_visitante": 0,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-08-16",
+                    "local": "RCD Mallorca",
+                    "visitante": "CD Castellón",
+                    "goles_local": 1,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-08-16",
+                    "local": "SD Eibar",
+                    "visitante": "Cádiz CF",
+                    "goles_local": 2,
+                    "goles_visitante": 0,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-08-16",
+                    "local": "Burgos CF",
+                    "visitante": "FC Andorra",
+                    "goles_local": 1,
+                    "goles_visitante": 2,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-08-17",
+                    "local": "Real Sporting de Gijón",
+                    "visitante": "Albacete Balompié",
+                    "goles_local": 1,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-08-17",
+                    "local": "CD Leganés",
+                    "visitante": "UD Las Palmas",
+                    "goles_local": 2,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-08-17",
+                    "local": "Real Sociedad B",
+                    "visitante": "UD Almería",
+                    "goles_local": 0,
+                    "goles_visitante": 2,
+                    "estado": "finalizado"
+                }
+            ]
+        },
+        {
+            "jornada": 2,
+            "partidos": [
+                {
+                    "fecha": "2026-08-21",
+                    "local": "Albacete Balompié",
+                    "visitante": "Girona FC",
+                    "goles_local": 1,
+                    "goles_visitante": 3,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-08-22",
+                    "local": "Real Sociedad B",
+                    "visitante": "AD Ceuta FC",
+                    "goles_local": 0,
+                    "goles_visitante": 0,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-08-22",
+                    "local": "FC Andorra",
+                    "visitante": "Granada CF",
+                    "goles_local": 1,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-08-22",
+                    "local": "CE Sabadell FC",
+                    "visitante": "RC Celta Fortuna",
+                    "goles_local": 2,
+                    "goles_visitante": 2,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-08-23",
+                    "local": "Cádiz CF",
+                    "visitante": "CD Tenerife",
+                    "goles_local": 0,
+                    "goles_visitante": 0,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-08-23",
+                    "local": "Córdoba CF",
+                    "visitante": "Real Valladolid CF",
+                    "goles_local": 1,
+                    "goles_visitante": 2,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-08-23",
+                    "local": "UD Almería",
+                    "visitante": "RCD Mallorca",
+                    "goles_local": 3,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-08-23",
+                    "local": "UD Las Palmas",
+                    "visitante": "SD Eibar",
+                    "goles_local": 1,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-08-24",
+                    "local": "CD Eldense",
+                    "visitante": "Burgos CF",
+                    "goles_local": 0,
+                    "goles_visitante": 2,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-08-24",
+                    "local": "Real Sporting de Gijón",
+                    "visitante": "Real Oviedo",
+                    "goles_local": 1,
+                    "goles_visitante": 0,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-08-24",
+                    "local": "CD Castellón",
+                    "visitante": "CD Leganés",
+                    "goles_local": 1,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                }
+            ]
+        },
+        {
+            "jornada": 3,
+            "partidos": [
+                {
+                    "fecha": "2026-08-28",
+                    "local": "Girona FC",
+                    "visitante": "Real Sociedad B",
+                    "goles_local": 4,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-08-29",
+                    "local": "AD Ceuta FC",
+                    "visitante": "FC Andorra",
+                    "goles_local": 2,
+                    "goles_visitante": 0,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-08-29",
+                    "local": "Granada CF",
+                    "visitante": "CE Sabadell FC",
+                    "goles_local": 3,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-08-29",
+                    "local": "RC Celta Fortuna",
+                    "visitante": "Cádiz CF",
+                    "goles_local": 1,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-08-30",
+                    "local": "CD Tenerife",
+                    "visitante": "Córdoba CF",
+                    "goles_local": 2,
+                    "goles_visitante": 0,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-08-30",
+                    "local": "Real Valladolid CF",
+                    "visitante": "UD Almería",
+                    "goles_local": 1,
+                    "goles_visitante": 2,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-08-30",
+                    "local": "RCD Mallorca",
+                    "visitante": "UD Las Palmas",
+                    "goles_local": 0,
+                    "goles_visitante": 0,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-08-30",
+                    "local": "SD Eibar",
+                    "visitante": "CD Eldense",
+                    "goles_local": 1,
+                    "goles_visitante": 0,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-08-31",
+                    "local": "Burgos CF",
+                    "visitante": "Real Sporting de Gijón",
+                    "goles_local": 2,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-08-31",
+                    "local": "Real Oviedo",
+                    "visitante": "CD Castellón",
+                    "goles_local": 0,
+                    "goles_visitante": 2,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-08-31",
+                    "local": "Albacete Balompié",
+                    "visitante": "CD Leganés",
+                    "goles_local": 1,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                }
+            ]
+        },
+        {
+            "jornada": 4,
+            "partidos": [
+                {
+                    "fecha": "2026-09-04",
+                    "local": "FC Andorra",
+                    "visitante": "Girona FC",
+                    "goles_local": 1,
+                    "goles_visitante": 2,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-05",
+                    "local": "CE Sabadell FC",
+                    "visitante": "AD Ceuta FC",
+                    "goles_local": 1,
+                    "goles_visitante": 0,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-05",
+                    "local": "Cádiz CF",
+                    "visitante": "Granada CF",
+                    "goles_local": 0,
+                    "goles_visitante": 2,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-05",
+                    "local": "Córdoba CF",
+                    "visitante": "RC Celta Fortuna",
+                    "goles_local": 2,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-06",
+                    "local": "UD Almería",
+                    "visitante": "CD Tenerife",
+                    "goles_local": 4,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-06",
+                    "local": "UD Las Palmas",
+                    "visitante": "Real Valladolid CF",
+                    "goles_local": 1,
+                    "goles_visitante": 3,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-06",
+                    "local": "CD Eldense",
+                    "visitante": "RCD Mallorca",
+                    "goles_local": 1,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-06",
+                    "local": "Real Sporting de Gijón",
+                    "visitante": "SD Eibar",
+                    "goles_local": 0,
+                    "goles_visitante": 2,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-07",
+                    "local": "CD Castellón",
+                    "visitante": "Burgos CF",
+                    "goles_local": 3,
+                    "goles_visitante": 2,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-07",
+                    "local": "CD Leganés",
+                    "visitante": "Real Oviedo",
+                    "goles_local": 1,
+                    "goles_visitante": 0,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-07",
+                    "local": "Real Sociedad B",
+                    "visitante": "Albacete Balompié",
+                    "goles_local": 2,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                }
+            ]
+        },
+        {
+            "jornada": 5,
+            "partidos": [
+                {
+                    "fecha": "2026-09-11",
+                    "local": "Girona FC",
+                    "visitante": "CE Sabadell FC",
+                    "goles_local": 3,
+                    "goles_visitante": 0,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-12",
+                    "local": "AD Ceuta FC",
+                    "visitante": "Cádiz CF",
+                    "goles_local": 1,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-12",
+                    "local": "Granada CF",
+                    "visitante": "Córdoba CF",
+                    "goles_local": 0,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-12",
+                    "local": "RC Celta Fortuna",
+                    "visitante": "UD Almería",
+                    "goles_local": 1,
+                    "goles_visitante": 3,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-13",
+                    "local": "CD Tenerife",
+                    "visitante": "UD Las Palmas",
+                    "goles_local": 2,
+                    "goles_visitante": 2,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-13",
+                    "local": "Real Valladolid CF",
+                    "visitante": "CD Eldense",
+                    "goles_local": 4,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-13",
+                    "local": "RCD Mallorca",
+                    "visitante": "Real Sporting de Gijón",
+                    "goles_local": 0,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-13",
+                    "local": "SD Eibar",
+                    "visitante": "Burgos CF",
+                    "goles_local": 2,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-14",
+                    "local": "Real Oviedo",
+                    "visitante": "Real Sociedad B",
+                    "goles_local": 1,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-14",
+                    "local": "Albacete Balompié",
+                    "visitante": "CD Castellón",
+                    "goles_local": 0,
+                    "goles_visitante": 4,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-14",
+                    "local": "FC Andorra",
+                    "visitante": "CD Leganés",
+                    "goles_local": 1,
+                    "goles_visitante": 2,
+                    "estado": "finalizado"
+                }
+            ]
+        },
+        {
+            "jornada": 6,
+            "partidos": [
+                {
+                    "fecha": "2026-09-18",
+                    "local": "Albacete Balompié",
+                    "visitante": "Córdoba CF",
+                    "goles_local": 1,
+                    "goles_visitante": 2,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-19",
+                    "local": "Real Sociedad B",
+                    "visitante": "RCD Mallorca",
+                    "goles_local": 0,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-19",
+                    "local": "FC Andorra",
+                    "visitante": "Real Sporting de Gijón",
+                    "goles_local": 1,
+                    "goles_visitante": 3,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-19",
+                    "local": "CD Eldense",
+                    "visitante": "SD Eibar",
+                    "goles_local": 1,
+                    "goles_visitante": 2,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-20",
+                    "local": "CD Castellón",
+                    "visitante": "CD Tenerife",
+                    "goles_local": 5,
+                    "goles_visitante": 0,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-20",
+                    "local": "Cádiz CF",
+                    "visitante": "Girona FC",
+                    "goles_local": 1,
+                    "goles_visitante": 2,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-20",
+                    "local": "CE Sabadell FC",
+                    "visitante": "Real Oviedo",
+                    "goles_local": 3,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-20",
+                    "local": "AD Ceuta FC",
+                    "visitante": "Real Valladolid CF",
+                    "goles_local": 1,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-21",
+                    "local": "UD Almería",
+                    "visitante": "RC Celta Fortuna",
+                    "goles_local": 2,
+                    "goles_visitante": 0,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-21",
+                    "local": "UD Las Palmas",
+                    "visitante": "Burgos CF",
+                    "goles_local": 1,
+                    "goles_visitante": 2,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-21",
+                    "local": "CD Leganés",
+                    "visitante": "Granada CF",
+                    "goles_local": 3,
+                    "goles_visitante": 2,
+                    "estado": "finalizado"
+                }
+            ]
+        },
+        {
+            "jornada": 7,
+            "partidos": [
+                {
+                    "fecha": "2026-09-25",
+                    "local": "Girona FC",
+                    "visitante": "Albacete Balompié",
+                    "goles_local": 2,
+                    "goles_visitante": 0,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-26",
+                    "local": "AD Ceuta FC",
+                    "visitante": "Real Sociedad B",
+                    "goles_local": 3,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-26",
+                    "local": "Granada CF",
+                    "visitante": "FC Andorra",
+                    "goles_local": 2,
+                    "goles_visitante": 3,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-26",
+                    "local": "RC Celta Fortuna",
+                    "visitante": "CE Sabadell FC",
+                    "goles_local": 1,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-27",
+                    "local": "CD Tenerife",
+                    "visitante": "Cádiz CF",
+                    "goles_local": 1,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-27",
+                    "local": "Real Valladolid CF",
+                    "visitante": "Córdoba CF",
+                    "goles_local": 3,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-27",
+                    "local": "RCD Mallorca",
+                    "visitante": "UD Almería",
+                    "goles_local": 0,
+                    "goles_visitante": 1,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-27",
+                    "local": "SD Eibar",
+                    "visitante": "UD Las Palmas",
+                    "goles_local": 3,
+                    "goles_visitante": 2,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-28",
+                    "local": "Burgos CF",
+                    "visitante": "CD Eldense",
+                    "goles_local": 1,
+                    "goles_visitante": 0,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-28",
+                    "local": "Real Oviedo",
+                    "visitante": "Real Sporting de Gijón",
+                    "goles_local": 2,
+                    "goles_visitante": 0,
+                    "estado": "finalizado"
+                },
+                {
+                    "fecha": "2026-09-28",
+                    "local": "CD Leganés",
+                    "visitante": "CD Castellón",
+                    "goles_local": null,
+                    "goles_visitante": null,
+                    "estado": "pendiente"
+                }
+            ]
+        }
+    ]
+}
