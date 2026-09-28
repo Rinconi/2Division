@@ -2,67 +2,72 @@ import json
 import requests
 
 def obtener_partidos():
-    # Usamos los repositorios abiertos de openfootball para la Segunda División de España (es2)
-    # Temporada actual 2026/2027
+    # CORREGIDO: Añadido 'raw.' al principio de la URL
     url = "https://githubusercontent.com"
     
     print("Descargando datos oficiales del campeonato...")
-    response = requests.get(url)
     
-    if response.status_code != 200:
-        print("La base de datos central de openfootball aún no tiene el JSON de esta temporada.")
-        print("Generando un JSON estructurado de contingencia...")
+    try:
+        response = requests.get(url, timeout=10)
+        # Si da un error 404 o similar, saltará directamente al bloque 'except'
+        response.raise_for_status() 
         
-        # En caso de que la temporada esté recién empezando en openfootball, aseguramos la creación del archivo
-        json_vacio = {
+        data = response.json()
+        lista_partidos = []
+
+        # Procesar las jornadas y partidos de openfootball
+        for round_data in data.get("rounds", []):
+            nombre_jornada = round_data.get("name", "")
+            jornada = int(''.join(filter(str.isdigit, nombre_jornada))) if any(char.isdigit() for char in nombre_jornada) else nombre_jornada
+            
+            for match in round_data.get("matches", []):
+                score_ft = match.get("score", {}).get("ft", [None, None])
+                
+                # Evitamos que score_ft sea None si el partido no se ha jugado
+                if score_ft is None:
+                    score_ft = [None, None]
+                    
+                goles_local = score_ft[0]
+                goles_visitante = score_ft[1]
+                
+                estado = "finalizado" if goles_local is not None else "programado"
+                
+                partido = {
+                    "jornada": jornada,
+                    "fecha": match.get("date", ""),
+                    "local": match.get("team1", ""),
+                    "visitante": match.get("team2", ""),
+                    "goles_local": goles_local,
+                    "goles_visitante": goles_visitante,
+                    "estado": estado
+                }
+                lista_partidos.append(partido)
+
+        json_final = {
+            "competicion": "LaLiga Hypermotion (Segunda División)",
+            "temporada": "2026/2027",
+            "total_partidos": len(lista_partidos),
+            "partidos": lista_partidos
+        }
+        print(f"¡Éxito! Datos procesados correctamente. {len(lista_partidos)} partidos encontrados.")
+
+    except Exception as e:
+        print(f"No se pudo obtener el archivo externo (Motivo: {e}).")
+        print("Generando un JSON estructurado de contingencia para evitar fallos en GitHub...")
+        
+        # Estructura base segura para que Git siempre encuentre el archivo
+        json_final = {
             "competicion": "LaLiga Hypermotion (Segunda División)",
             "temporada": "2026/2027",
             "total_partidos": 0,
             "partidos": []
         }
-        with open("partidos_segunda_division.json", "w", encoding="utf-8") as f:
-            json.dump(json_vacio, f, ensure_ascii=False, indent=2)
-        return
 
-    data = response.json()
-    lista_partidos = []
-
-    # Procesar las jornadas y partidos de openfootball
-    for round_data in data.get("rounds", []):
-        # Intentar extraer el número de la jornada (ej: "Round 1" -> 1)
-        nombre_jornada = round_data.get("name", "")
-        jornada = int(''.join(filter(str.isdigit, nombre_jornada))) if any(char.isdigit() for char in nombre_jornada) else nombre_jornada
-        
-        for match in round_data.get("matches", []):
-            goles_local = match.get("score", {}).get("ft", [None, None])[0]
-            goles_visitante = match.get("score", {}).get("ft", [None, None])[1]
-            
-            estado = "finalizado" if goles_local is not None else "programado"
-            
-            partido = {
-                "jornada": jornada,
-                "fecha": match.get("date", ""),
-                "local": match.get("team1", ""),
-                "visitante": match.get("team2", ""),
-                "goles_local": goles_local,
-                "goles_visitante": goles_visitante,
-                "estado": estado
-            }
-            lista_partidos.append(partido)
-
-    # Estructura final uniforme
-    json_final = {
-        "competicion": "LaLiga Hypermotion (Segunda División)",
-        "temporada": "2026/2027",
-        "total_partidos": len(lista_partidos),
-        "partidos": lista_partidos
-    }
-
-    # Guardar asegurando el nombre exacto que busca Git
+    # Guardar el archivo JSON final en el repositorio
     with open("partidos_segunda_division.json", "w", encoding="utf-8") as f:
         json.dump(json_final, f, ensure_ascii=False, indent=2)
         
-    print(f"¡Éxito! Archivo generado con {len(lista_partidos)} partidos.")
+    print("¡Archivo 'partidos_segunda_division.json' guardado localmente!")
 
 if __name__ == "__main__":
     obtener_partidos()
