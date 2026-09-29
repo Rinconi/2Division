@@ -7,6 +7,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.enums import TA_CENTER
 
+# Directorio y archivo
 out_dir = pathlib.Path("informes")
 historial_file = out_dir / "historial_hypermotion.json"
 log_file = out_dir / "ejecuciones.log"
@@ -39,17 +40,20 @@ MAPEO = {
 PARTIDOS = {}
 
 def log_mensaje(m):
+    """Escribe en log y consola"""
     print(m)
     with open(log_file,'a',encoding='utf-8') as f:
         f.write(f"[{datetime.now():%Y-%m-%d %H:%M:%S}] {m}\n")
 
 def normaliza(s):
+    """Normaliza nombres de equipos para búsqueda"""
     s = s.lower()
     s = ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c)!= 'Mn')
     s = re.sub(r'[^a-z0-9 ]',' ',s)
     return s.strip()
 
 def clave_equipo(nombre):
+    """Obtiene la clave de equipo del mapeo"""
     n = normaliza(nombre)
     for k in sorted(MAPEO.keys(), key=len, reverse=True):
         if k in n:
@@ -57,6 +61,7 @@ def clave_equipo(nombre):
     return None
 
 def cargar_partidos():
+    """Carga PARTIDOS desde JSON, o crea estructura vacía"""
     global PARTIDOS
     PARTIDOS = {v: [] for v in set(MAPEO.values())}
     with open(historial_file,'r',encoding='utf-8') as f:
@@ -91,6 +96,7 @@ def cargar_partidos():
     return PARTIDOS
 
 def recalcular(d):
+    """Recalcula la tabla de clasificación"""
     t = []
     for eq, lista in d.items():
         if not lista:
@@ -124,6 +130,7 @@ def recalcular(d):
     return t
 
 def get_logo(eq):
+    """Obtiene el logo de un equipo si existe"""
     path = pathlib.Path("logos")
     if not path.exists():
         return None
@@ -137,6 +144,7 @@ def get_logo(eq):
     return None
 
 def generar_pdf():
+    """Genera el PDF con la clasificación y fichas de equipos"""
     TABLA = recalcular(PARTIDOS)
     fecha_str = datetime.now(ZoneInfo("Europe/Madrid")).strftime("%Y-%m-%d")
     hora_str = datetime.now(ZoneInfo("Europe/Madrid")).strftime("%d/%m/%Y - %H:%M")
