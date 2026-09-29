@@ -647,9 +647,9 @@
           "fecha": "2026-09-28",
           "local": "CD Leganés",
           "visitante": "CD Castellón",
-          "goles_local": null,
-          "goles_visitante": null,
-          "estado": "pendiente"
+          "goles_local": 0,
+          "goles_visitante": 2,
+          "estado": "finalizado"
         }
       ]
     }
