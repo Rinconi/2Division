@@ -1,4 +1,4 @@
-import pathlib, json, re
+import pathlib, json, re, unicodedata
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from reportlab.lib.pagesizes import A4
