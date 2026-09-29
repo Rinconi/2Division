@@ -639,9 +639,9 @@
           "fecha": "2026-09-28",
           "local": "Real Oviedo",
           "visitante": "Real Sporting de Gijón",
-          "goles_local": 2,
-          "goles_visitante": 0,
-          "estado": "finalizado"
+          "goles_local": null,
+          "goles_visitante": null,
+          "estado": "pendiente"
         },
         {
           "fecha": "2026-09-28",
