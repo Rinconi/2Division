@@ -1,0 +1,26 @@
+name: Añadir Jornada Nuevo
+on:
+  workflow_dispatch:
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Permiso clave para que GitHub pueda guardar el JSON en tu repositorio
+    steps:
+      - uses: actions/checkout@v4 # 1. Descargar el código del repositorio
+      - uses: actions/setup-python@v5 # 2. Configurar el entorno de Python
+        with:
+          python-version: '3.11'
+      - name: Instalar
+        run: pip install requests beautifulsoup4 reportlab
+      - name: Arreglar pendiente
+        run: python anadir_jornadanuevo.py # Ejecutar el script
+      - name: Generar PDF
+        run: python main2division.py # Ejecutar el script
+      - name: Guardar
+        run: |
+          git config user.name "bot"
+          git config user.email "bot@bot.com"
+          git add informes/
+          git diff --staged --quiet || git commit -m "fix J7 Leganes 0-2 Castellon"
+          git push
