@@ -60,19 +60,75 @@ def clave_equipo(nombre_espn):
 
 def cargar_partidos():
     global PARTIDOS
-    if historial_file.exists():
-        try:
-            with open(historial_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                PARTIDOS = {k: [tuple(x) for x in v] for k, v in data.items()}
-            log_mensaje(f"✅ Cargados {len(PARTIDOS)} equipos desde {historial_file.name}")
-            return PARTIDOS
-        except Exception as e:
-            log_mensaje(f"❌ Error cargando JSON: {e}")
-
+    # inicializa vacio con todas las claves
     PARTIDOS = {v: [] for v in set(MAPEO.values())}
-    log_mensaje("⚠️ Estructura vacía")
-    return PARTIDOS
+
+    if not historial_file.exists():
+        log_mensaje("❌ No existe historial")
+        return PARTIDOS
+
+    try:
+        with open(historial_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        # tu archivo es una lista o un dict que contiene una lista
+        if isinstance(data, dict):
+            # busca la lista dentro: puede estar en "partidos", "historial", etc
+            lista = data.get("partidos") or data.get("historial") or data.get("data") or []
+            # si el dict es del formato antiguo {equipo: [[...]]} lo detectamos
+            if not lista and any(isinstance(v, list) for v in data.values()):
+                # es formato antiguo, cargamos tal cual
+                PARTIDOS = {k: [tuple(x) for x in v if len(x)==5] for k,v in data.items()}
+                log_mensaje(f"✅ Cargado formato antiguo: {len(PARTIDOS)} equipos")
+                return PARTIDOS
+        else:
+            lista = data # es directamente una lista []
+
+        count = 0
+        pendientes = 0
+        for p in lista:
+            if not isinstance(p, dict): continue
+            if p.get("estado") == "pendiente":
+                pendientes+=1
+                continue
+
+            gl = p.get("goles_local")
+            gv = p.get("goles_visitante")
+            if gl is None or gv is None:
+                pendientes+=1
+                continue
+
+            fecha = p.get("fecha","2026-09-28")[:10]
+            local = p.get("local","")
+            visitante = p.get("visitante","")
+
+            kh = clave_equipo(local)
+            ka = clave_equipo(visitante)
+            if not kh or not ka:
+                log_mensaje(f"⚠️ No mapeado: {local} vs {visitante}")
+                continue
+
+            gol = f"{int(gl)}-{int(gv)}"
+            rh = "V" if int(gl)>int(gv) else "D" if int(gl)<int(gv) else "E"
+            ra = "D" if rh=="V" else "V" if rh=="D" else "E"
+            texto = f"{local} {gol} {visitante}"
+
+            # evitar duplicados
+            if any(x[0]==fecha and x[4]==gol for x in PARTIDOS.get(kh,[])):
+                continue
+
+            PARTIDOS[kh].append((fecha, texto, rh, "", gol))
+            PARTIDOS[ka].append((fecha, "", ra, texto, gol))
+            count+=1
+
+        log_mensaje(f"✅ Cargados {count} partidos finalizados desde JSON ({pendientes} pendientes ignorados)")
+        return PARTIDOS
+
+    except Exception as e:
+        log_mensaje(f"❌ Error cargando JSON nuevo formato: {e}")
+        import traceback
+        log_mensaje(traceback.format_exc())
+        return PARTIDOS
 
 def recalcular(d):
     t = []
