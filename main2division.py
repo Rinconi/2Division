@@ -44,7 +44,10 @@ def log_mensaje(m):
         f.write(f"[{datetime.now():%Y-%m-%d %H:%M:%S}] {m}\n")
 
 def normaliza(s):
-    return re.sub(r'[^a-z0-9 ]',' ',s.lower()).strip()
+    s = s.lower()
+    s = ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
+    s = re.sub(r'[^a-z0-9 ]',' ',s)
+    return s.strip()
 
 def clave_equipo(nombre):
     n = normaliza(nombre)
