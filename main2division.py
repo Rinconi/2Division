@@ -79,6 +79,7 @@ def cargar_partidos():
             kh = clave_equipo(local)
             ka = clave_equipo(visitante)
             if not kh or not ka:
+                log_mensaje(f"⚠️ Sin mapear: {local} -> {kh} | {visitante} -> {ka}")
                 continue
             gol = f"{int(gl)}-{int(gv)}"
             if any(x[0]==fecha and x[4]==gol for x in PARTIDOS[kh]):
