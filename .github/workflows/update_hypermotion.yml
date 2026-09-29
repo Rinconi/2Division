@@ -5,18 +5,18 @@ jobs:
   update:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write # Permiso clave para que GitHub pueda guardar el JSON en tu repositorio
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v4 # 1. Descargar el código del repositorio
+      - uses: actions/setup-python@v5 # 2. Configurar el entorno de Python
         with:
           python-version: '3.11'
       - name: Instalar
         run: pip install requests beautifulsoup4 reportlab
       - name: Arreglar pendiente
-        run: python anadir_jornada.py
+        run: python anadir_jornada.py # Ejecutar el script
       - name: Generar PDF
-        run: python main2division.py
+        run: python main2division.py # Ejecutar el script
       - name: Guardar
         run: |
           git config user.name "bot"
