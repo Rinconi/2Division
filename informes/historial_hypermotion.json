@@ -652,6 +652,99 @@
           "estado": "finalizado"
         }
       ]
+    },
+    {
+      "jornada": 8,
+      "partidos": [
+        {
+          "fecha": "2026-10-02",
+          "local": "CD Eldense",
+          "visitante": "Real Oviedo",
+          "goles_local": null,
+          "goles_visitante": null,
+          "estado": "pendiente"
+        },
+        {
+          "fecha": "2026-10-03",
+          "local": "Albacete BP",
+          "visitante": "SD Eibar",
+          "goles_local": null,
+          "goles_visitante": null,
+          "estado": "pendiente"
+        },
+        {
+          "fecha": "2026-10-03",
+          "local": "UD Almería",
+          "visitante": "Burgos CF",
+          "goles_local": null,
+          "goles_visitante": null,
+          "estado": "pendiente"
+        },
+        {
+          "fecha": "2026-10-03",
+          "local": "Cádiz CF",
+          "visitante": "CD Leganés",
+          "goles_local": null,
+          "goles_visitante": null,
+          "estado": "pendiente"
+        },
+        {
+          "fecha": "2026-10-03",
+          "local": "CE Sabadell FC",
+          "visitante": "FC Andorra",
+          "goles_local": null,
+          "goles_visitante": null,
+          "estado": "pendiente"
+        },
+        {
+          "fecha": "2026-10-04",
+          "local": "Real Sociedad B",
+          "visitante": "Granada CF",
+          "goles_local": null,
+          "goles_visitante": null,
+          "estado": "pendiente"
+        },
+        {
+          "fecha": "2026-10-04",
+          "local": "Real Sporting",
+          "visitante": "RC Celta Fortuna",
+          "goles_local": null,
+          "goles_visitante": null,
+          "estado": "pendiente"
+        },
+        {
+          "fecha": "2026-10-04",
+          "local": "CD Castellón",
+          "visitante": "AD Ceuta FC",
+          "goles_local": null,
+          "goles_visitante": null,
+          "estado": "pendiente"
+        },
+        {
+          "fecha": "2026-10-04",
+          "local": "UD Las Palmas",
+          "visitante": "Real Valladolid CF",
+          "goles_local": null,
+          "goles_visitante": null,
+          "estado": "pendiente"
+        },
+        {
+          "fecha": "2026-10-04",
+          "local": "Girona FC",
+          "visitante": "RCD Mallorca",
+          "goles_local": null,
+          "goles_visitante": null,
+          "estado": "pendiente"
+        },
+        {
+          "fecha": "2026-10-05",
+          "local": "Córdoba CF",
+          "visitante": "CD Tenerife",
+          "goles_local": null,
+          "goles_visitante": null,
+          "estado": "pendiente"
+        }
+      ]
     }
   ]
 }
